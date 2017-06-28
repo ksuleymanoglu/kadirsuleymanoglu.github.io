@@ -1,0 +1,320 @@
+        * {
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        background: #f1f6f8;
+        font-family: sans-serif;
+        margin: 0 auto;
+        /*to center the body section */
+    }
+    
+    P {
+        color: #f1f6f8;
+        font-family: 'Alegreya Sans' sans-serif;
+        font-size: 160%;
+        line-height: 150%;
+        padding: 3%;
+        text-align: justify;
+        text-indent: 2%;
+    }
+    
+    blockquote {
+        font-family: 'Alegreya Sans' sans-serif;
+        font-size: 160%;
+        line-height: 150%;
+        padding: 10% 3% 0 3%;
+        text-align: justify;
+    }
+    
+    h1 {
+        font-family: 'Alegreya', sans-serif;
+    }
+    
+    h2 {
+        font-family: 'Alegreya', sans-serif;
+        font-size: 185%;
+    }
+    
+    h3 {
+        font-size: 175%;
+        font-weight: 500;
+        line-height: 150%;
+    }
+    
+    a {
+        color: #524c56;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    
+    a:hover {
+        color: #524c56;
+    }
+    
+    img {
+        display: block;
+        height: auto;
+        margin: 0 auto;
+        margin-bottom: -4px;
+        max-width: 100%;
+    }
+    
+    #wrapper {
+        margin: 0 auto;
+        max-width: 1200 px;
+    }
+    
+    #bannerwrapper {
+        margin: 0 auto;
+        max-width: 1200 px;
+        padding: 0 0 3% 0;
+    }
+    
+    header {
+        height: 100px;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+    #logo {
+        background: url(img/icons/KS_logo_ff5c5c_mobile.png) no-repeat center;
+        float: left;
+        height: 100px;
+        margin: 20px;
+        width: 200px;
+    }
+    /*Start Navigation Style*/
+    
+    nav {
+        float: right;
+        padding: 25px 20px 0 0;
+    }
+    
+    #menu-icon {
+        background: url(img/icons/nav-dark.png) center;
+        display: hidden;
+        height: 40px;
+        width: 40px;
+    }
+    
+    ul {
+        list-style: none;
+    }
+    
+    nav ul li {
+        display: inline-block;
+        float: left;
+        font-family: 'Alegreya Sans' sans-serif;
+        font-size: 150%;
+        padding: 10px;
+    }
+    
+    nav ul li a {
+        color: #6991AC;
+    }
+    
+    .current {
+        color: #3f5767;
+    }
+    
+    a:hover {
+        color: #a5bdcd;
+    }
+    
+    #whatsnext {
+        max-width: 600px center;
+    }
+    
+    .banner-image img {
+        height: auto;
+        margin: 0 auto;
+        overflow: auto;
+        position: relative;
+        width: 100%;
+    }
+    
+    .banner-image h2 {
+        color: #f1f6f8;
+        font-size: 350%;
+        left: 0;
+        line-height: 150%;
+        padding-left: 20px;
+        position: absolute;
+        top: 200px;
+        width: 50%;
+    }
+    
+    .banner-image h1 {
+        color: #f1f6f8;
+        font-size: 350%;
+        left: 0;
+        line-height: 150%;
+        padding-left: 20px;
+        position: absolute;
+        top: 400px;
+        width: 50%;
+    }
+    /* Start of Four Column Section*/
+    
+    .one-fourth {
+        float: left;
+        text-align: center;
+        width: 25%;
+    }
+    
+    .one-fourth i {
+        /*color: #f0f0f0;*/
+        font-size: 600%;
+        padding-top: 20%;
+        text-decoration: none;
+    }
+    /* Start of Three Column Section*/
+    
+    .one-third {
+        background-color: #6991ac;
+        float: left;
+        margin-bottom: 3%;
+        margin-top: 3%;
+        padding-top: 5%;
+        text-align: center;
+        width: 33.33333%;
+    }
+    /*Start Footer Section*/
+    
+    footer {
+        width: 100%;
+    }
+    
+    .icon-text {
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    .icon-text-icon {
+        float: left;
+        padding: 4%;
+        width: 20%;
+    }
+    
+    .footer-nav {
+        text-align: right;
+    }
+    
+    .footer-nav a {
+        font-size: 160%;
+        font-weight: 300;
+    }
+    
+    .icon-text-text {
+        float: left;
+        padding: 4% 4% 2% 0;
+        width: 64%;
+    }
+    
+    a:hover {
+        color: #000000;
+    }
+    
+    .social {
+        list-style-type: none;
+        text-align: center;
+    }
+    
+    .social li {
+        display: inline;
+    }
+    
+    .social i {
+        font-size: 420%;
+        margin: 1%;
+        padding: 5% 5% 5% 4%;
+    }
+    
+    .social i:hover {
+        color: #000000;
+    }
+    
+    .secondfooter {
+        max-height: 50px;
+        text-align: center;
+    }
+    /* Media Queries*/
+    
+    @media screen and (max-width: 1280px) {
+        p {
+            font-size: 130%;
+        }
+        h3 {
+            font-size: 150%;
+        }
+        header {
+            height: 80px;
+            position: relative;
+        }
+        #logo {
+            background: url(img/icons/KS_logo_ff5c5c_mobile.png) no-repeat center;
+            margin: 15px 0 20px -25px;
+        }
+        #menu-icon {
+            display: inline-block;
+        }
+        nav:hover ul {
+            display: block;
+        }
+        nav ul,
+        nav:active ul {
+            background: #f1f6f8;
+            border: 1px solid #6991ac;
+            border-radius: 3px 0 3px 3px;
+            display: none;
+            opacity: 0.9;
+            padding: 20px;
+            position: absolute;
+            right: 20px;
+            width: 50%;
+            z-index: 1000;
+        }
+        nav li {
+            text-align: center;
+            width: 100%;
+        }
+        .one-fourth {
+            float: left;
+            width: 100%;
+        }
+        .one-third {
+            float: left;
+            width: 100%;
+        }
+        .banner-image h1,
+        h2 {
+            display: none;
+        }
+        .icon-text-icon{
+            padding: 0 0 2% 0;
+            width: 100%;            
+        }
+         .icon-text-text{
+            padding: 0 0 2% 0;
+            width: 100%;
+             font-size: 80%;
+        }
+        .footer-nav{
+            padding-top: 5%;  
+            text-align: center;
+        }
+        
+        .footer-nav li{
+            padding: 1%;
+        }
+         .social i{
+            font-size: 180%;            
+        }
+        
+        .secondfooter h3{
+            font-size: 100%;
+        }
