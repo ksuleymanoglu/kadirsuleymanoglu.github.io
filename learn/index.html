@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thinking Like the Machine</title>
+<style>
+/* Layout: engineer's logbook. Graph-paper ground, a sticky chapter rail on the left,
+   one reading column on the right. Highlighter yellow marks hypotheses and predictions. */
+:root {
+  --paper: #eef1f5;
+  --sheet: #ffffff;
+  --ink: #172131;
+  --muted: #556274;
+  --rule: #d3dae3;
+  --grid: rgba(35, 70, 214, 0.06);
+  --accent: #2346d6;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4e9fb;
+  --mark: #f6d743;
+  --mark-ink: #172131;
+  --good: #1f7a4d;
+  --good-soft: #def3e8;
+  --bad: #b4232a;
+  --bad-soft: #fbe3e4;
+  --code-bg: #f5f7fa;
+  --hl-line: #fff4bf;
+
+  --f-display: "Rockwell", "Roboto Slab", "Bitter", "Zilla Slab", "DejaVu Serif", Georgia, "Times New Roman", serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --s-xs: 0.8125rem;
+  --s-sm: 0.9rem;
+  --s-md: 1.0625rem;
+  --s-lg: 1.375rem;
+  --s-xl: 1.875rem;
+  --s-xxl: 2.75rem;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f141b; --sheet: #161d27; --ink: #e3e9f1; --muted: #9aa8b9; --rule: #2a3442;
+    --grid: rgba(125, 155, 255, 0.07); --accent: #86a1ff; --accent-ink: #0f141b; --accent-soft: #1d2840;
+    --mark: #e9c93a; --mark-ink: #11161d; --good: #4cc38a; --good-soft: #14301f; --bad: #ff8585;
+    --bad-soft: #3a1a1c; --code-bg: #10161e; --hl-line: #3a3410; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f141b; --sheet: #161d27; --ink: #e3e9f1; --muted: #9aa8b9; --rule: #2a3442;
+  --grid: rgba(125, 155, 255, 0.07); --accent: #86a1ff; --accent-ink: #0f141b; --accent-soft: #1d2840;
+  --mark: #e9c93a; --mark-ink: #11161d; --good: #4cc38a; --good-soft: #14301f; --bad: #ff8585;
+  --bad-soft: #3a1a1c; --code-bg: #10161e; --hl-line: #3a3410; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body {
+  margin: 0;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font: 400 var(--s-md)/1.6 var(--f-body);
+}
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+code, kbd, pre, textarea.code { font-family: var(--f-mono); font-size: 0.92em; }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0 0.3em; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 0.2em; border-radius: 2px; }
+
+/* top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 1rem; justify-content: space-between;
+  padding: 0.6rem 16px; background: var(--sheet); border-bottom: 1px solid var(--rule);
+}
+.brand { font-family: var(--f-display); font-weight: 700; font-size: var(--s-md); letter-spacing: 0.01em; }
+.brand span { color: var(--muted); font-weight: 400; }
+@media (max-width: 640px) { .brand span { display: none; } }
+.topbar .meter { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 0.6rem; font-size: var(--s-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter-track { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.meter-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+
+/* shell */
+.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 2.5rem; max-width: 1180px; margin: 0 auto; padding: 2rem 16px 4rem; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding-top: 1.25rem; } }
+.rail { position: sticky; top: 72px; align-self: start; }
+@media (max-width: 900px) { .rail { position: static; } }
+.rail h2 { font: 600 var(--s-xs)/1.2 var(--f-body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 0.75rem; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rail a { display: grid; grid-template-columns: 1.6rem 1fr auto; align-items: baseline; gap: 0.4rem; padding: 0.4rem 0.5rem; border-radius: var(--radius); color: var(--ink); text-decoration: none; font-size: var(--s-sm); }
+.rail a:hover { background: var(--accent-soft); }
+.rail a .n { font-family: var(--f-mono); color: var(--muted); font-size: var(--s-xs); }
+.rail a .done { color: var(--good); font-weight: 700; visibility: hidden; }
+.rail a.is-done .done { visibility: visible; }
+.rail .theme { margin-top: 1rem; }
+@media (max-width: 900px) { .rail ol { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+
+main { min-width: 0; max-width: 780px; }
+
+/* chapters */
+.chapter { padding-block: 0.5rem 3rem; border-bottom: 1px dashed var(--rule); margin-bottom: 2.5rem; }
+.chapter:last-child { border-bottom: 0; }
+.eyebrow { font: 600 var(--s-xs)/1 var(--f-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin: 0 0 0.5rem; }
+h1, h2, h3, h4 { font-family: var(--f-display); text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: var(--s-xxl); letter-spacing: -0.01em; margin-bottom: 1rem; }
+.chapter > h2 { font-size: var(--s-xl); margin-bottom: 1rem; }
+h3 { font-size: var(--s-lg); margin: 2.25rem 0 0.75rem; }
+h4 { font-size: var(--s-md); margin: 1.25rem 0 0.4rem; }
+p, ul, ol { margin: 0 0 1rem; max-width: 68ch; }
+li { margin-bottom: 0.35rem; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 60ch; }
+.small { font-size: var(--s-sm); color: var(--muted); }
+
+/* panels */
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin: 1.25rem 0; }
+.panel > :last-child { margin-bottom: 0; }
+.panel-title { font: 600 var(--s-xs)/1 var(--f-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.panel-title b { color: var(--ink); }
+.note { border-left: 4px solid var(--mark); background: var(--sheet); padding: 0.8rem 1rem; margin: 1.25rem 0; border-radius: 0 var(--radius) var(--radius) 0; }
+.note > :last-child { margin-bottom: 0; }
+blockquote { margin: 1rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px solid var(--rule); color: var(--muted); }
+blockquote cite { display: block; font-style: normal; font-size: var(--s-sm); margin-top: 0.3rem; }
+
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: var(--s-sm); background: var(--sheet); }
+th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; font-size: var(--s-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; }
+.fast { color: var(--good); font-weight: 600; }
+.slow { color: var(--bad); font-weight: 600; }
+
+/* buttons */
+button, .btn {
+  font: 600 var(--s-sm)/1 var(--f-body); cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+  padding: 0.55rem 0.9rem; border-radius: var(--radius);
+}
+button.ghost { background: transparent; color: var(--accent); }
+button.quiet { background: transparent; color: var(--muted); border-color: var(--rule); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:hover:not(:disabled) { filter: brightness(1.08); }
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.inline-check { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--s-sm); }
+@media (max-width: 640px) { .topbar .meter { max-width: 7rem; } .meter-track { display: none; } }
+
+/* code runner */
+.runner { margin: 1.25rem 0; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); overflow: hidden; }
+.runner-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--rule); font: 600 var(--s-xs)/1.2 var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.runner-head .edited { color: var(--accent); text-transform: none; letter-spacing: 0; }
+textarea.code {
+  display: block; width: 100%; border: 0; resize: vertical; margin: 0;
+  padding: 0.8rem 1rem; background: var(--code-bg); color: var(--ink);
+  line-height: 1.55; tab-size: 2; white-space: pre; overflow: auto;
+}
+.predict { display: grid; gap: 0.4rem; padding: 0.75rem 1rem; border-top: 1px solid var(--rule); }
+.predict label { font-size: var(--s-sm); font-weight: 600; }
+.predict label .tag { background: var(--mark); color: var(--mark-ink); font: 700 var(--s-xs)/1 var(--f-mono); padding: 0.2rem 0.4rem; border-radius: 3px; margin-right: 0.4rem; letter-spacing: 0.06em; }
+.predict input { font: var(--s-sm) var(--f-mono); padding: 0.5rem 0.6rem; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper); color: var(--ink); width: 100%; }
+.runner .row { padding: 0 1rem 0.8rem; }
+.output { margin: 0; padding: 0.75rem 1rem; border-top: 1px solid var(--rule); background: var(--paper); font: var(--s-sm)/1.5 var(--f-mono); white-space: pre-wrap; word-break: break-word; min-height: 2.6rem; color: var(--ink); }
+.output:empty::before { content: "Output appears here after you run the code."; color: var(--muted); font-family: var(--f-body); }
+.output .err { color: var(--bad); }
+.output .cmp { display: block; color: var(--muted); font-family: var(--f-body); margin-bottom: 0.4rem; }
+
+pre.static { margin: 1rem 0; padding: 0.8rem 1rem; background: var(--code-bg); border: 1px solid var(--rule); border-radius: var(--radius); overflow-x: auto; line-height: 1.55; }
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 640px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.split pre.static { margin: 0; }
+.label-bad, .label-good { font: 700 var(--s-xs)/1 var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+.label-bad { color: var(--bad); } .label-good { color: var(--good); }
+
+/* stepper */
+.stepper .code-lines { margin: 0; padding: 0.6rem 0; background: var(--code-bg); border: 1px solid var(--rule); border-radius: var(--radius); overflow-x: auto; font: var(--s-sm)/1.6 var(--f-mono); }
+.stepper .code-lines div { padding: 0 1rem; white-space: pre; display: grid; grid-template-columns: 2rem 1fr; }
+.stepper .code-lines div .ln { color: var(--muted); user-select: none; }
+.stepper .code-lines div.on { background: var(--hl-line); }
+.memory { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+@media (max-width: 640px) { .memory { grid-template-columns: minmax(0, 1fr); } }
+.memory h4 { margin: 0 0 0.4rem; font: 600 var(--s-xs)/1 var(--f-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.frame { border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 0.6rem; overflow: hidden; background: var(--sheet); }
+.frame .fname { font: 600 var(--s-xs)/1 var(--f-mono); padding: 0.4rem 0.6rem; background: var(--accent-soft); color: var(--ink); }
+.cell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0.5rem; padding: 0.35rem 0.6rem; border-top: 1px solid var(--rule); font: var(--s-sm)/1.4 var(--f-mono); }
+.cell .k { color: var(--muted); }
+.cell.changed { background: var(--hl-line); }
+.ref { display: inline-block; background: var(--accent); color: var(--accent-ink); border-radius: 3px; padding: 0 0.35rem; font-size: var(--s-xs); font-weight: 700; }
+.empty { color: var(--muted); font: var(--s-sm) var(--f-body); padding: 0.5rem 0; }
+.step-note { margin-top: 0.75rem; padding: 0.7rem 0.9rem; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--radius) var(--radius) 0; min-height: 3rem; }
+.stepper .row { margin-top: 0.75rem; }
+.stepcount { font: var(--s-xs) var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.out-line { font: var(--s-sm) var(--f-mono); margin-top: 0.5rem; }
+
+/* bug lab */
+.lab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+@media (max-width: 760px) { .lab { grid-template-columns: minmax(0, 1fr); } }
+.hyp { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; padding: 0.6rem 0; border-top: 1px solid var(--rule); align-items: start; }
+.hyp:first-of-type { border-top: 0; }
+.hyp input { margin-top: 0.3rem; width: 1.05rem; height: 1.05rem; }
+.hyp label { font-weight: 600; font-size: var(--s-sm); }
+.hyp.ruled label { text-decoration: line-through; color: var(--muted); }
+.hyp details { grid-column: 2; font-size: var(--s-sm); color: var(--muted); }
+.hyp summary { cursor: pointer; color: var(--accent); }
+.exp-list { display: grid; gap: 0.4rem; }
+.exp-list button { text-align: left; line-height: 1.35; font-weight: 500; }
+.logbook { margin-top: 1rem; }
+.logbook ol { margin: 0; padding-left: 1.3rem; font-size: var(--s-sm); max-width: none; }
+.logbook li { margin-bottom: 0.6rem; }
+.logbook pre { margin: 0.3rem 0; padding: 0.4rem 0.6rem; background: var(--code-bg); border-radius: 4px; white-space: pre-wrap; font: var(--s-xs)/1.5 var(--f-mono); }
+.logbook .means { color: var(--muted); }
+.feedback { margin-top: 0.75rem; padding: 0.7rem 0.9rem; border-radius: var(--radius); font-size: var(--s-sm); }
+.feedback.good { background: var(--good-soft); color: var(--ink); border-left: 4px solid var(--good); }
+.feedback.bad { background: var(--bad-soft); color: var(--ink); border-left: 4px solid var(--bad); }
+select { font: var(--s-sm) var(--f-body); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); max-width: 100%; }
+
+/* pipeline */
+.pipeline { display: grid; gap: 0; margin: 0.5rem 0; }
+.pstep { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.6rem; align-items: center; padding: 0.45rem 0; }
+.pstep .badge { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); font: 700 var(--s-xs) var(--f-mono); }
+.pstep .what { font-size: var(--s-sm); }
+.pstep .what code { font-size: var(--s-xs); }
+.probe { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.6rem; align-items: center; }
+.probe .stem { width: 2px; height: 100%; min-height: 1.6rem; background: var(--rule); justify-self: center; }
+.probe button { justify-self: start; padding: 0.3rem 0.6rem; font: 500 var(--s-xs) var(--f-mono); }
+.probe .val { font: var(--s-xs) var(--f-mono); background: var(--mark); color: var(--mark-ink); padding: 0.25rem 0.5rem; border-radius: 3px; justify-self: start; }
+
+/* field guide cards */
+.guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+@media (max-width: 680px) { .guide { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.card h4 { margin: 0; font-size: var(--s-lg); }
+.card .q { font-style: italic; color: var(--muted); font-size: var(--s-sm); margin: 0; }
+.card dl { margin: 0; display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.3rem 0.6rem; font-size: var(--s-sm); }
+.card dt { font: 600 var(--s-xs)/1.6 var(--f-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.card dd { margin: 0; }
+.card pre { margin: 0; padding: 0.5rem 0.6rem; background: var(--code-bg); border-radius: 4px; overflow-x: auto; font: var(--s-xs)/1.5 var(--f-mono); }
+.pic { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; font: 600 var(--s-xs) var(--f-mono); min-height: 2rem; }
+.pic span { border: 1.5px solid var(--accent); border-radius: 3px; padding: 0.15rem 0.4rem; background: var(--accent-soft); }
+.pic i { font-style: normal; color: var(--muted); }
+
+/* race chart */
+.race-bars { display: grid; gap: 0.6rem; margin: 1rem 0 0.5rem; }
+.race-row { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 6.5rem; gap: 0.6rem; align-items: center; font-size: var(--s-sm); }
+@media (max-width: 520px) { .race-row { grid-template-columns: 6.5rem minmax(0, 1fr) 5rem; } }
+.race-row .bar-track { height: 18px; background: var(--paper); border-radius: 0 4px 4px 0; }
+.race-row .bar { height: 100%; width: 0; background: var(--accent); border-radius: 0 4px 4px 0; transition: width 0.4s; min-width: 2px; }
+.race-row .t { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.race-verdict { font-weight: 600; }
+
+/* wizard */
+.wizard .crumbs { font-size: var(--s-xs); color: var(--muted); font-family: var(--f-mono); margin-bottom: 0.6rem; min-height: 1rem; }
+.wizard .wq { font-family: var(--f-display); font-size: var(--s-lg); margin: 0 0 0.9rem; }
+.wizard .opts { display: grid; gap: 0.5rem; }
+.wizard .opts button { text-align: left; background: var(--sheet); color: var(--ink); border-color: var(--rule); font-weight: 500; line-height: 1.35; padding: 0.75rem 0.9rem; }
+.wizard .opts button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.wizard .opts button small { display: block; color: var(--muted); font-weight: 400; margin-top: 0.2rem; }
+.result-name { font-family: var(--f-display); font-size: var(--s-xl); margin: 0 0 0.5rem; }
+
+/* drills */
+.drill { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: 0.9rem; }
+.drill .dq { font-weight: 600; margin: 0 0 0.7rem; }
+.drill .dq .num { font-family: var(--f-mono); color: var(--muted); margin-right: 0.4rem; }
+.drill .opts { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.drill .opts button { background: var(--sheet); color: var(--ink); border-color: var(--rule); font-weight: 500; }
+.drill .opts button.right { background: var(--good-soft); border-color: var(--good); }
+.drill .opts button.wrong { background: var(--bad-soft); border-color: var(--bad); }
+.drill .why { margin-top: 0.7rem; font-size: var(--s-sm); }
+.drill .why pre { margin: 0.5rem 0 0; padding: 0.5rem 0.6rem; background: var(--code-bg); border-radius: 4px; overflow-x: auto; font: var(--s-xs)/1.5 var(--f-mono); }
+.score { font: 600 var(--s-sm) var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* booleans */
+.bools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 640px) { .bools { grid-template-columns: minmax(0, 1fr); } }
+.toggles { display: grid; gap: 0.4rem; font: var(--s-sm) var(--f-mono); }
+.toggles label { display: flex; gap: 0.5rem; align-items: center; }
+.screen { border: 2px solid var(--rule); border-radius: var(--radius); padding: 0.8rem; min-height: 5rem; font-size: var(--s-sm); background: var(--paper); }
+.screen .spin { color: var(--accent); }
+.verdict-ok { color: var(--good); font-weight: 700; }
+.verdict-no { color: var(--bad); font-weight: 700; }
+.combos td, .combos th { font-family: var(--f-mono); font-size: var(--s-xs); padding: 0.35rem 0.5rem; }
+.combos tr.cur td { background: var(--hl-line); }
+
+/* interleaving */
+.threads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 0.8fr); gap: 0.8rem; }
+@media (max-width: 680px) { .threads { grid-template-columns: minmax(0, 1fr); } }
+.thread { border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; background: var(--sheet); }
+.thread .th { padding: 0.45rem 0.7rem; font: 700 var(--s-xs)/1 var(--f-mono); background: var(--accent-soft); display: flex; justify-content: space-between; }
+.thread ol { margin: 0; padding: 0.5rem 0.7rem 0.5rem 2rem; font: var(--s-xs)/1.7 var(--f-mono); max-width: none; }
+.thread li { margin: 0; }
+.thread li.next { background: var(--hl-line); }
+.thread li.did { color: var(--muted); }
+.thread .loc { padding: 0.4rem 0.7rem; border-top: 1px solid var(--rule); font: var(--s-xs) var(--f-mono); }
+.thread button { margin: 0 0.7rem 0.7rem; }
+.shared { border: 2px solid var(--accent); border-radius: var(--radius); padding: 0.7rem; background: var(--sheet); text-align: center; }
+.shared .big { font: 700 var(--s-xl)/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.sched { font: var(--s-sm) var(--f-mono); margin-top: 0.75rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.75rem; }
+.chip { font: 600 var(--s-xs)/1 var(--f-mono); padding: 0.35rem 0.45rem; border-radius: 3px; border: 1px solid; }
+.chip.ok { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+.chip.lost { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+
+/* parsons */
+.parsons { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 4px; max-width: none; }
+.parsons li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 0.4rem; align-items: center; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0.25rem 0.4rem; margin: 0; }
+.parsons li.ok { border-color: var(--good); }
+.parsons li.no { border-color: var(--bad); }
+.parsons li button { padding: 0.25rem 0.45rem; font-size: var(--s-xs); background: transparent; color: var(--accent); }
+.parsons li code { white-space: pre; overflow-x: auto; font-size: var(--s-sm); border: 0; background: none; padding: 0; }
+
+/* chapter done */
+.done-box { display: flex; gap: 0.6rem; align-items: center; margin-top: 2rem; padding: 0.8rem 1rem; background: var(--sheet); border: 1px dashed var(--accent); border-radius: var(--radius); font-weight: 600; }
+.done-box input { width: 1.2rem; height: 1.2rem; }
+
+.checklist { list-style: none; padding: 0; max-width: none; }
+.checklist li { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.45rem 0; border-bottom: 1px solid var(--rule); margin: 0; }
+.checklist input { margin-top: 0.35rem; }
+.sources li { font-size: var(--s-sm); }
+footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">Thinking Like the Machine <span>· a logbook for self-taught programmers</span></div>
+  <div class="meter" aria-label="Course progress">
+    <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
+    <span id="meter-text">0 of 9 chapters</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <h2>Chapters</h2>
+    <ol id="toc"></ol>
+    <div class="theme row">
+      <button class="quiet" id="theme-btn" type="button">Theme: system</button>
+      <button class="quiet" id="reset-btn" type="button">Reset progress</button>
+    </div>
+    <p class="small" id="reset-confirm" hidden>Clear all checkmarks and scores? <button class="ghost" id="reset-yes" type="button">Yes, clear</button></p>
+  </nav>
+
+  <main>
+
+<!-- ============================================================ 0 -->
+<section class="chapter" id="start" data-title="Start here">
+  <p class="eyebrow">Chapter 0</p>
+  <h1>Thinking Like the Machine</h1>
+  <p class="lede">A hands-on course in the skills a computer science degree drills without always naming them: keeping an accurate picture of what the computer does, debugging by testing "what if" worlds, and picking the data shape that makes a problem easy.</p>
+
+  <h3>The argument you read</h3>
+  <p>Joe Marshall's post <em>Not Everyone Can Code</em> says debugging is counterfactual reasoning. To find a bug you have to suppose something you believe is false ("this pointer is null, even though I checked it two lines ago") and work out how that world could exist. He maps it onto Judea Pearl's three levels of causal reasoning:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pearl's level</th><th>The question</th><th>What it sounds like in code</th></tr></thead>
+      <tbody>
+        <tr><td>1. Association</td><td>What is?</td><td>"The total is wrong whenever the cart has a mug in it."</td></tr>
+        <tr><td>2. Intervention</td><td>What if I do X?</td><td>"If I remove the mug, the total is right again."</td></tr>
+        <tr><td>3. Counterfactual</td><td>Why did Y happen?</td><td>"For the total to be <code>NaN</code>, some multiplication must have had a non-number in it. Which one, and how did it get there?"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>He argues that people who copy recipes, glue libraries together or prompt an LLM without simulating the system stay on levels 1 and 2, and that concurrency makes level 3 much harder, because you have to reason about orderings you have never seen happen.</p>
+
+  <h3>What the research adds</h3>
+  <p>The diagnosis is useful. The fatalism is less well supported. Some points from computing-education research:</p>
+  <ul>
+    <li><strong>The cited studies measured untrained reasoning.</strong> The 1970s work he cites (Dulit, Keating, Neimark) studied Piaget-style "formal operational" reasoning in people who had not been taught it. That tells you where people start, not where they can get to. (I could not check the exact percentages he quotes.)</li>
+    <li><strong>Debugging improves when it is taught as a procedure.</strong> In a controlled study, students given explicit instruction in systematic debugging improved both their debugging performance and their confidence compared with a control group (Michaeli &amp; Romeike, 2019). A 2021 study found few novices use the hypothesis-testing method on their own, which suggests the problem is that nobody teaches it.</li>
+    <li><strong>Labelling the purpose of each step helps.</strong> Worked examples whose steps are labelled with their goal ("subgoal labels") lowered dropout and failure in an intro programming course (Margulieux, Morrison &amp; Decker, 2020).</li>
+    <li><strong>You need a model of the machine.</strong> Novices struggle when they don't know what the computer does with each line. Researchers call the simplified picture you need a "notional machine" (du Boulay; Sorva, 2013). Chapter 1 builds one.</li>
+    <li><strong>Reading and writing code are separate skills.</strong> PRIMM (Sentance and colleagues) orders practice as <em>Predict, Run, Investigate, Modify, Make</em>. Parsons problems, where you put scrambled lines in order, let you practise structure with less load (Ericson and colleagues).</li>
+  </ul>
+
+  <div class="note">
+    <p><strong>The move this course is built on.</strong> Marshall himself says very few people can reason about concurrency "without the aid of formal models or pure architectural restraint." Experts don't hold every what-if in their head either. They push the what-ifs out into things they can look at: a trace, a log line, an assertion, a test, a data structure that can't represent a bad state. Those aids can be learned, and they are what this course teaches.</p>
+  </div>
+
+  <h3>How to use this</h3>
+  <ul>
+    <li><strong>Predict before you run.</strong> Every code box has a <mark>Predict</mark> field. Type what you think will happen, then press Run. Being wrong is the useful part: it shows you exactly where your mental model differs from the machine.</li>
+    <li><strong>Then modify.</strong> All code boxes are editable. Change one thing, predict again, run again.</li>
+    <li><strong>Mark chapters done</strong> at the bottom of each one. Progress is saved in this browser only.</li>
+    <li>Examples are in JavaScript, because it runs right here in the page. Every idea carries over to Python, Java, C# and the rest; Chapter 3 gives the Python names too.</li>
+  </ul>
+  <p class="small">This page is a single file that works offline. Nothing you type leaves your computer.</p>
+</section>
+
+<!-- ============================================================ 1 -->
+<section class="chapter" id="machine" data-title="The machine in your head">
+  <p class="eyebrow">Chapter 1</p>
+  <h2>The machine in your head</h2>
+  <p>You can't imagine a world where "this variable is null" unless you know how a variable gets its value in the first place. Debugging is a comparison: what you think the machine did versus what it did. If your picture of the machine is vague, there is nothing to compare against. So we start by making the picture exact.</p>
+
+  <h3>Rule 1: a name points at a value</h3>
+  <p>A variable is a name. It points at a value. Assignment (<code>=</code>) makes the name point somewhere new. It is not an equation, and it does not link two names forever. Numbers, strings and booleans are small and get copied. Arrays and objects live in a separate area (the <em>heap</em>), and the name holds an arrow to them.</p>
+  <p>Step through this program and watch the two columns. Before each click, say out loud what you expect to change.</p>
+
+  <div class="panel stepper" data-stepper="refs">
+    <p class="panel-title"><b>Memory stepper</b> · names and the heap</p>
+  </div>
+
+  <p>Now test the same rules on new code. Write your prediction first.</p>
+  <div class="runner" data-ex="primitive" data-prompt="What are the two printed values?"></div>
+  <div class="runner" data-ex="alias" data-prompt="What does a look like at the end, and is a === b?"></div>
+  <div class="runner" data-ex="constobj" data-prompt="Does this throw an error, or print something?"></div>
+
+  <h3>Rule 2: each function call gets a fresh set of names</h3>
+  <p>When a function is called, the machine opens a new <em>frame</em>: a private box of names for that call. Parameters get the values that were passed in. When the function returns, the frame is thrown away. This is why a variable from inside a function "doesn't exist" outside it.</p>
+  <div class="panel stepper" data-stepper="frames">
+    <p class="panel-title"><b>Memory stepper</b> · call frames</p>
+  </div>
+
+  <h3>Beliefs that break programs</h3>
+  <p>These are the most common wrong models researchers find in learners. Each one produces bugs you can't find, because your simulation of the code agrees with the bug.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Wrong belief</th><th>What the machine actually does</th></tr></thead>
+      <tbody>
+        <tr><td><code>b = a</code> links b and a forever</td><td>For numbers and strings, b gets a copy at that moment. For arrays and objects, both names share one thing until one of them is reassigned.</td></tr>
+        <tr><td><code>const</code> makes an object unchangeable</td><td><code>const</code> stops the <em>name</em> from pointing elsewhere. The object itself can still change.</td></tr>
+        <tr><td><code>{...obj}</code> makes a full copy</td><td>The spread copies one level. Nested arrays and objects are still shared. Use <code>structuredClone(obj)</code> for a deep copy.</td></tr>
+        <tr><td>Code runs in the order it's written</td><td>Inside one function, yes. Callbacks and anything after an <code>await</code> run later, when the machine gets to them. Chapter 7 is about this.</td></tr>
+        <tr><td>A variable can hold "whatever the user typed"</td><td>Input from a form, file, URL or API is always a string or raw JSON until you convert it. <code>"2" + 2</code> is <code>"22"</code>.</td></tr>
+        <tr><td>If the program didn't crash, the value is fine</td><td>JavaScript keeps going with <code>undefined</code> and <code>NaN</code>. The crash, if any, happens far from the cause.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="runner" data-ex="spread" data-prompt="What are original.name and original.tags at the end?"></div>
+
+  <div class="note">
+    <p><strong>Habit to build:</strong> when you read code you didn't write, keep a scratch "names and heap" table on paper for the variables that matter. It feels slow for a week, then it becomes automatic. <a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a> draws this diagram for real Python and JavaScript programs, so you can check your table against it.</p>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="machine"> I can predict what each line does to the names and the heap</label>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="chapter" id="debug" data-title="Debugging as a procedure">
+  <p class="eyebrow">Chapter 2</p>
+  <h2>Debugging as a procedure</h2>
+  <p>The "insulting falsehood" Marshall describes is easier to entertain once you see it is just a line on a list. You don't have to believe that the value is wrong. You only have to write it down as one possible world and then check it. That turns level 3 reasoning ("why?") into a series of level 2 experiments ("what if I look here?"), which anyone can run.</p>
+
+  <h3>The loop</h3>
+  <ol>
+    <li><strong>Observe.</strong> Write down the symptom exactly: the input, what you expected, what you got. Make it happen again on demand.</li>
+    <li><strong>List the worlds.</strong> Ask: "For this output to appear, what must be true?" Write every answer down, including the ones you're sure are false. Especially those.</li>
+    <li><strong>Predict.</strong> For each world: "If this were true, what would I see if I looked at X?" A hypothesis that predicts nothing is useless.</li>
+    <li><strong>Experiment.</strong> Pick the check that rules out the most worlds for the least effort. Log a value, run a smaller input, comment out a line.</li>
+    <li><strong>Conclude and record.</strong> Cross out the worlds the evidence killed. Keep a logbook: what you tried, what you saw, what it means. Repeat until one world is left.</li>
+  </ol>
+  <p>Andreas Zeller's <em>Why Programs Fail</em> calls this scientific debugging. The logbook matters because without it you forget what you already ruled out and start testing in circles.</p>
+
+  <h3>Bug lab: the NaN checkout</h3>
+  <div class="panel">
+    <p class="panel-title"><b>Bug report</b></p>
+    <p>"My checkout total says <code>NaN</code>." Another customer's cart works fine. Here is the function and the two carts.</p>
+    <pre class="static" id="lab-code"></pre>
+  </div>
+  <div class="lab">
+    <div class="panel">
+      <p class="panel-title"><b>Step 1–3</b> · possible worlds</p>
+      <p class="small">Read each one. Before opening "If this were true…", decide what you would expect to see. Untick a world when the evidence rules it out.</p>
+      <div id="hyps"></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><b>Step 4</b> · experiments</p>
+      <p class="small">Each button runs real code. Choose the one you think rules out the most worlds.</p>
+      <div class="exp-list" id="exps"></div>
+    </div>
+  </div>
+  <div class="panel logbook">
+    <p class="panel-title"><b>Step 5</b> · logbook</p>
+    <ol id="logbook"><li class="small">Run an experiment and the result is recorded here.</li></ol>
+    <div class="row">
+      <label for="conclusion"><strong>Conclusion:</strong></label>
+      <select id="conclusion">
+        <option value="">Choose the world that's left…</option>
+        <option value="h1">A price is a string</option>
+        <option value="h2">An item has no qty field</option>
+        <option value="h3">The coupon has no percent</option>
+        <option value="h4">The loop reads past the end</option>
+        <option value="h5">The rounding creates NaN</option>
+      </select>
+      <button type="button" id="conclude">Check conclusion</button>
+    </div>
+    <div id="lab-feedback"></div>
+  </div>
+
+  <h3>Search, don't stare: the wolf fence</h3>
+  <p>When a value goes wrong somewhere in a long chain of steps, don't read every step. Check the value in the middle. If it's already wrong, the bug is in the first half; if it's right, the second half. Each check throws away half of the program. Eight steps need at most three checks. The same idea at the level of history is <code>git bisect</code>, which finds the commit that broke something.</p>
+  <div class="panel" id="wolf">
+    <p class="panel-title"><b>Price pipeline</b> · <span id="wolf-count">0 checks</span></p>
+    <p>Input: <code>" 19.99 EUR "</code>, quantity 3. Orders of 3 or more get 10% off, then shipping of €4.99 is added. The right answer is <strong>€58.96</strong>. The program prints <strong>€64.86</strong>. Click a probe to see the value at that point. Find the broken step in as few probes as you can.</p>
+    <div class="pipeline" id="pipeline"></div>
+    <div class="row">
+      <label for="wolf-guess"><strong>Broken step:</strong></label>
+      <select id="wolf-guess"></select>
+      <button type="button" id="wolf-check">Check</button>
+      <button type="button" class="quiet" id="wolf-reset">Start over</button>
+    </div>
+    <div id="wolf-feedback"></div>
+  </div>
+
+  <h3>Tactics that make counterfactuals cheap</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tactic</th><th>When to use it</th></tr></thead>
+      <tbody>
+        <tr><td>Read the whole error message and stack trace</td><td>Always first. The bottom frame that's in your code is usually where to look.</td></tr>
+        <tr><td>Shrink the input</td><td>The bug appears on big data. Cut it in half until it disappears; the last piece you removed holds the cause.</td></tr>
+        <tr><td>Diff working against broken</td><td>One case works and one doesn't (like the two carts). The difference between them is a short list of suspects.</td></tr>
+        <tr><td>Log the <em>type</em> as well as the value</td><td><code>console.log(typeof x, x)</code>. "8" and 8 look the same in many places.</td></tr>
+        <tr><td>Explain it out loud, line by line</td><td>"Rubber duck" debugging. Saying each step forces you to simulate it instead of skimming.</td></tr>
+        <tr><td>Use the debugger's breakpoints</td><td>You want to see many variables at one moment. Browser DevTools and VS Code both let you pause and look.</td></tr>
+        <tr><td>Bisect history</td><td>It worked last week. <code>git bisect</code> searches the commits between.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <p><strong>Using an LLM without skipping level 3.</strong> Paste the symptom and your list of worlds, and ask for experiments that would tell them apart, not for a fix. When it proposes a fix, ask "which of my worlds does this assume, and what evidence shows that world is the real one?" If it can't answer, you haven't found the bug yet.</p>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="debug"> I can list possible worlds and pick experiments to rule them out</label>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="chapter" id="data" data-title="Data shapes">
+  <p class="eyebrow">Chapter 3</p>
+  <h2>Data shapes come first</h2>
+  <p>The bug lab ended in a data problem: one item had <code>quantity</code> where the code expected <code>qty</code>. That's typical. Most confusing code is confusing because the data is the wrong shape, and the code is working around it.</p>
+  <blockquote>"Show me your flowchart and conceal your tables, and I shall continue to be mystified. Show me your tables, and I won't usually need your flowchart; it'll be obvious."<cite>Fred Brooks, <em>The Mythical Man-Month</em></cite></blockquote>
+  <blockquote>"Data dominates. If you've chosen the right data structures and organized things well, the algorithms will almost always be self-evident."<cite>Rob Pike, <em>Notes on Programming in C</em></cite></blockquote>
+  <p><em>How to Design Programs</em> makes this a rule: write down what your data looks like before writing any function, because the shape of the data decides the shape of the code. A list leads to a loop. A tree leads to recursion. A choice between kinds leads to an <code>if</code> or <code>switch</code> with one branch per kind.</p>
+
+  <h3>Six questions to ask about any data</h3>
+  <ol>
+    <li><strong>Is it one thing with named parts?</strong> A user has a name, email and age. → <em>Object / record</em></li>
+    <li><strong>Is it a small, fixed group where position is the meaning?</strong> An (x, y) point, a (value, error) pair. → <em>Tuple</em></li>
+    <li><strong>Is it many things of the same kind, in an order?</strong> Messages in a chat. → <em>Array / list</em></li>
+    <li><strong>Will you look things up by a key?</strong> Find the user with ID 42. → <em>Map / dictionary</em></li>
+    <li><strong>Do you only care whether something is present, with no duplicates?</strong> Tags, visited pages. → <em>Set</em></li>
+    <li><strong>Does it have a structure of its own?</strong> Processed newest-first or oldest-first → <em>stack</em> or <em>queue</em>. Contains smaller versions of itself → <em>tree</em>. Arbitrary connections → <em>graph</em>.</li>
+  </ol>
+
+  <h3>Field guide</h3>
+  <p>"Fast" and "slow" below are about how the work grows as the data grows. Fast means the same speed for 10 items or 10 million. Slow means the machine checks every item, so 10× more data is 10× more work. Computer scientists write these as O(1) and O(n).</p>
+  <div class="guide" id="guide"></div>
+
+  <h3>The costs side by side</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operation</th><th>Array</th><th>Map / object</th><th>Set</th></tr></thead>
+      <tbody>
+        <tr><td>Get item number i</td><td class="fast">instant · O(1)</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td>Find by key / ID</td><td class="slow">scans all · O(n)</td><td class="fast">instant · O(1)</td><td>n/a</td></tr>
+        <tr><td>"Is X in here?"</td><td class="slow">scans all · O(n)</td><td class="fast">instant (by key)</td><td class="fast">instant · O(1)</td></tr>
+        <tr><td>Add at the end</td><td class="fast">instant</td><td class="fast">instant</td><td class="fast">instant</td></tr>
+        <tr><td>Add or remove at the front</td><td class="slow">shifts all · O(n)</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td>Keep things in order</td><td class="fast">yes</td><td>insertion order (Map)</td><td>insertion order</td></tr>
+        <tr><td>Allows duplicates</td><td>yes</td><td>keys unique</td><td>no</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="race">
+    <p class="panel-title"><b>Measure it</b> · 2,000 "is X in here?" checks, timed in your browser</p>
+    <div class="row">
+      <label for="race-n">Collection size:</label>
+      <select id="race-n">
+        <option value="1000">1,000 items</option>
+        <option value="10000" selected>10,000 items</option>
+        <option value="100000">100,000 items</option>
+        <option value="1000000">1,000,000 items</option>
+      </select>
+      <button type="button" id="race-run">Run the race</button>
+    </div>
+    <div class="race-bars" id="race-bars" role="img" aria-label="Time taken by array.includes compared with set.has"></div>
+    <p class="race-verdict" id="race-verdict"></p>
+    <p class="small">Try 1,000 items, then 1,000,000. The array's time grows with the size; the Set's barely moves. For a list of 20 things, use whatever reads best. The difference only starts to matter for large collections checked many times, such as inside a loop.</p>
+  </div>
+
+  <h3>Tuples, records and the key trap</h3>
+  <p>JavaScript has no real tuple type. People use a short array instead: <code>[x, y]</code>, or <code>const [count, setCount] = useState(0)</code> in React. That's fine for two values whose meaning is obvious. Past two or three, or when the order could be confused, use an object with names. Map libraries disagree about whether a point is <code>[lat, lng]</code> (Leaflet) or <code>[lng, lat]</code> (GeoJSON), and that disagreement has put plenty of markers in the ocean. <code>{ lat, lng }</code> can't be swapped by accident.</p>
+  <p>In Python, tuples are immutable and can be dictionary keys, so <code>visited[(2, 3)] = True</code> works. JavaScript compares arrays by identity, not by contents. Predict this one carefully:</p>
+  <div class="runner" data-ex="tuplekey" data-prompt="What do the two get() calls return?"></div>
+  <p>A plain object is the right choice for a <em>record</em>: a fixed, known set of fields. Use a <code>Map</code> for a <em>collection</em> keyed by values you don't know in advance. Object keys are always turned into strings, which causes quiet collisions:</p>
+  <div class="runner" data-ex="objvsmap" data-prompt="How many keys does each end up with?"></div>
+
+  <h3>Real data nests</h3>
+  <p>Real programs combine the shapes: a Map from ID to record, where each record holds an array, and so on. A common, useful pattern is grouping: a Map from a key to an array of everything with that key.</p>
+  <div class="runner" data-ex="groupby" data-prompt="What does the Map contain?"></div>
+  <p>When the same thing appears in several places (a user who wrote posts and comments), store it once in a Map by ID and refer to it by ID elsewhere. This is called normalizing, and it's what databases do. If the user's name is copied into every post, renaming the user means finding every copy. Miss one and the copies disagree.</p>
+
+  <h3>Build it: count words</h3>
+  <p>A Parsons problem. The lines of a working function are scrambled. Put them in order with the arrows, then check. Indentation is a clue.</p>
+  <div class="panel">
+    <ul class="parsons" id="parsons"></ul>
+    <div class="row">
+      <button type="button" id="parsons-check">Check order</button>
+      <button type="button" class="quiet" id="parsons-shuffle">Shuffle again</button>
+    </div>
+    <div id="parsons-feedback"></div>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="data"> I can name the right shape for data before I write code</label>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="chapter" id="wizard" data-title="Which structure?">
+  <p class="eyebrow">Chapter 4</p>
+  <h2>Which structure? A decision helper</h2>
+  <p>Use this when you're starting a feature and aren't sure how to hold the data. Answer for the job you'll do <em>most often</em>; that's what the structure should make easy. When two jobs matter equally, the answer is often "both": an array for order plus a Map for lookup.</p>
+  <div class="panel wizard">
+    <div class="crumbs" id="wiz-crumbs"></div>
+    <div id="wiz-body"></div>
+    <div class="row" style="margin-top: 1rem;">
+      <button type="button" class="quiet" id="wiz-back">Back</button>
+      <button type="button" class="quiet" id="wiz-restart">Start over</button>
+    </div>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="wizard"> I've walked through the helper for a feature I'm building</label>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="chapter" id="drills" data-title="Scenario drills">
+  <p class="eyebrow">Chapter 5</p>
+  <h2>Scenario drills</h2>
+  <p>Sixteen situations from real apps. Pick the structure you'd reach for first. Each answer explains the trade-off, because "it depends" is often the honest answer and the useful part is knowing what it depends on.</p>
+  <p class="score" id="drill-score">Score: 0 / 0 answered</p>
+  <div id="drill-list"></div>
+  <div class="row"><button type="button" class="quiet" id="drill-reset">Clear answers</button></div>
+  <label class="done-box"><input type="checkbox" data-done="drills"> I scored 12 or more and understood the misses</label>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="chapter" id="techniques" data-title="Techniques: when to use what">
+  <p class="eyebrow">Chapter 6</p>
+  <h2>Techniques: when to use what</h2>
+  <p>Each technique here does the same job: it cuts down the number of worlds you have to imagine when something goes wrong. A pure function has one world per input. A state machine has only valid states. An assertion turns a "suppose this were false" into a line that checks.</p>
+
+  <h3>Loops and map / filter / reduce</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>You want to…</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Turn each item into one new item</td><td><code>map</code></td></tr>
+        <tr><td>Keep some items</td><td><code>filter</code></td></tr>
+        <tr><td>Combine everything into one value (sum, max, object)</td><td><code>reduce</code>, or a plain loop if reduce gets hard to read</td></tr>
+        <tr><td>Find the first match, or ask "any?" / "all?"</td><td><code>find</code>, <code>some</code>, <code>every</code>; they stop early</td></tr>
+        <tr><td>Stop partway, track several things at once, or squeeze out speed</td><td>A plain <code>for</code> loop</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="runner" data-ex="mfr" data-prompt="What are paidTotals, revenue, and the found order?"></div>
+
+  <h3>Lookup table instead of an if/else chain</h3>
+  <p>When a chain of <code>if</code>s maps one value to another, it's data pretending to be code. Put it in an object or Map. Adding a country becomes a one-line data change, and "what happens for an unknown country?" gets one clear answer instead of falling off the end of the chain.</p>
+  <div class="runner" data-ex="lookup" data-prompt="What happens on each call?"></div>
+
+  <h3>Guard clauses</h3>
+  <p>Handle the bad cases first and return early. The main path then reads straight down, with no nesting, and each early return is one world you've dealt with and can stop thinking about.</p>
+  <div class="runner" data-ex="guards" data-prompt="Which message comes back?"></div>
+
+  <h3>Pure functions and side effects</h3>
+  <p>A pure function's result depends only on its arguments, and it changes nothing outside itself. That makes it the easiest code to debug: run it with the failing input and you've reproduced the bug. A function that reads a global or mutates its input has a hidden extra input, which is the whole world. Keep the logic pure and push reading files, network calls and DOM updates to the edges. People call this "functional core, imperative shell."</p>
+  <div class="runner" data-ex="pure" data-prompt="What are the three printed prices?"></div>
+
+  <h3>Make impossible states impossible</h3>
+  <p>A loading screen tracked with three booleans has 2 × 2 × 2 = 8 combinations. Only four make sense. The other four are bugs waiting for a code path to produce them. Toggle the flags and see.</p>
+  <div class="panel">
+    <div class="bools">
+      <div>
+        <p class="panel-title"><b>Three booleans</b></p>
+        <div class="toggles">
+          <label><input type="checkbox" id="b-loading"> isLoading</label>
+          <label><input type="checkbox" id="b-error"> hasError</label>
+          <label><input type="checkbox" id="b-data"> hasData</label>
+        </div>
+        <p id="b-verdict" style="margin-top: 0.75rem;"></p>
+      </div>
+      <div>
+        <p class="panel-title"><b>What the screen shows</b></p>
+        <div class="screen" id="b-screen"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="combos" id="combos"></table>
+    </div>
+  </div>
+  <p>Replace the flags with one <code>status</code> field that can only hold the states that exist. Data that belongs to a state lives inside it, so you can't have an error message without an error.</p>
+  <pre class="static">// 4 states, all of them valid
+{ status: "idle" }
+{ status: "loading" }
+{ status: "error",   message: "Network down" }
+{ status: "success", data: [/* … */] }
+
+switch (state.status) {
+  case "idle":    return showSearchBox();
+  case "loading": return showSpinner();
+  case "error":   return showError(state.message);
+  case "success": return showResults(state.data);
+}</pre>
+  <p>This is a small <em>state machine</em>. Reach for one whenever you catch yourself adding a boolean to describe what phase something is in: forms, uploads, checkouts, connections, game rounds.</p>
+
+  <h3>Assertions and checking at the boundary</h3>
+  <p>An assertion is a counterfactual written as code: "suppose this weren't true; stop right here and say so." It moves the crash from three functions later to the exact place the assumption broke.</p>
+  <div class="runner" data-ex="assert" data-prompt="What prints, and where does it stop?"></div>
+  <p>The best place to check is where data enters your program: a form, an API response, a file. Convert it there into the shape the rest of the code expects, once. After that boundary, the inside of your program can trust its data. (In TypeScript, the same idea is "parse, don't validate," and libraries like Zod do it for you.)</p>
+  <div class="runner" data-ex="boundary" data-prompt="What does each parsed item look like?"></div>
+
+  <h3>Recursion for data that contains itself</h3>
+  <p>Use recursion when the data is a tree: folders in folders, comments with replies, nested menus, JSON. The function handles one node and calls itself for the children. For a flat list, use a loop.</p>
+  <div class="runner" data-ex="tree" data-prompt="How many comments are in the thread?"></div>
+
+  <h3>Tests: counterfactuals you keep</h3>
+  <p>A test is a what-if you write down once and the computer checks forever. When choosing test inputs, run through this list. Each line is a world your code might meet:</p>
+  <ul>
+    <li><strong>Empty:</strong> no items, empty string, zero</li>
+    <li><strong>One:</strong> a single item; loops with one pass hide off-by-one errors</li>
+    <li><strong>Many and duplicates:</strong> the same item twice</li>
+    <li><strong>Missing or misspelled fields:</strong> <code>quantity</code> instead of <code>qty</code></li>
+    <li><strong>Wrong type:</strong> <code>"8"</code> instead of <code>8</code>, <code>null</code></li>
+    <li><strong>Boundaries:</strong> exactly 3 items when the discount starts at 3; negative numbers; very large numbers</li>
+    <li><strong>Text:</strong> spaces at the ends, capital letters, accents and emoji (<code>"İzmir".toLowerCase()</code> is a classic)</li>
+  </ul>
+
+  <h3>Architecture in five decisions</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Decision</th><th>Rule of thumb</th></tr></thead>
+      <tbody>
+        <tr><td>Where does this piece of state live?</td><td>One owner. Everyone else asks the owner or gets a copy. Two places holding "the" cart will disagree.</td></tr>
+        <tr><td>Should I make this reusable?</td><td>Write it plainly the first time and copy it the second. Extract a shared function the third time, when you can see what actually varies.</td></tr>
+        <tr><td>Class or plain object and functions?</td><td>Plain data plus functions by default. A class earns its place when it guards a rule about its own data, like a bank account that never goes negative.</td></tr>
+        <tr><td>Inheritance or composition?</td><td>Prefer composition: build things out of smaller parts you pass in. Deep inheritance chains make "which method runs?" a hard question.</td></tr>
+        <tr><td>How do I split the code into files?</td><td>By what changes together. UI, business rules and data access change for different reasons, so keep them apart.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="techniques"> I know which technique removes which kind of "what if"</label>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="chapter" id="concurrency" data-title="Concurrency and async">
+  <p class="eyebrow">Chapter 7</p>
+  <h2>Concurrency: debugging many histories</h2>
+  <p>Marshall calls concurrent code "counterfactual reasoning on steroids": instead of one history, there are many possible orderings, and the bug may live in one you've never seen. JavaScript runs one piece of code at a time, but it's still exposed: every <code>await</code>, timer and event is a point where other code can run and change the world before you continue.</p>
+
+  <h3>The lost update</h3>
+  <p>Two tasks each add €10 to a balance of €100. Each one reads the balance, adds 10 to its own copy, then writes the copy back. You choose the order the steps run in. Can you get €120? Can you get something else?</p>
+  <div class="panel">
+    <div class="threads">
+      <div class="thread" id="tA"></div>
+      <div class="thread" id="tB"></div>
+      <div class="shared">
+        <div class="small">shared balance</div>
+        <div class="big" id="balance">€100</div>
+        <div class="small" id="inter-verdict">Expected when both finish: €120</div>
+      </div>
+    </div>
+    <p class="sched">Order so far: <span id="sched">(none)</span></p>
+    <div class="row">
+      <button type="button" class="quiet" id="inter-reset">Reset</button>
+      <button type="button" class="ghost" id="inter-all">Show every possible order</button>
+      <label class="inline-check"><input type="checkbox" id="inter-atomic"> Make each deposit one indivisible step</label>
+    </div>
+    <div id="inter-all-out"></div>
+  </div>
+  <p>That's the multiverse: twenty possible histories, and testing will mostly show you the lucky ones. Nobody checks all of them in their head. The practical answer is the "architectural restraint" from the article: design so that the dangerous orderings can't happen.</p>
+
+  <h3>The same bug in a search box</h3>
+  <p>A user types "ca", then "cat". Two requests go out. The first is slow; the second is fast. The answers come back in the wrong order.</p>
+  <div class="runner" data-ex="stale" data-prompt="What does the screen show at the end?"></div>
+  <p>The fix: remember which request is the latest and ignore any answer that isn't. (In real code, <code>AbortController</code> can also cancel the old request.)</p>
+  <div class="runner" data-ex="stalefix" data-prompt="Now what does the screen show?"></div>
+
+  <h3>Restraint that removes orderings</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Technique</th><th>What it rules out</th></tr></thead>
+      <tbody>
+        <tr><td>Don't share changeable state</td><td>Give each piece of state one owner. Other tasks send it messages or requests instead of writing to it.</td></tr>
+        <tr><td>Immutable data</td><td>If nothing can change a value after it's made, nobody can see it half-changed.</td></tr>
+        <tr><td>Queues</td><td>Work goes into a queue and one worker takes it out in order. Many writers, one sequence.</td></tr>
+        <tr><td>Atomic operations and transactions</td><td>Read-change-write happens as one step. In SQL: <code>UPDATE accounts SET balance = balance + 10</code> instead of reading in app code and writing back.</td></tr>
+        <tr><td>Locks</td><td>Only one task at a time in a section. Effective but easy to get wrong (deadlocks), so prefer the options above.</td></tr>
+        <tr><td>Idempotent operations</td><td>Doing it twice has the same effect as once ("set status to paid" rather than "add a payment"), so retries and duplicates are harmless.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <label class="done-box"><input type="checkbox" data-done="concurrency"> I can spot a read-change-write that another task could interrupt</label>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="chapter" id="practice" data-title="Practice plan and sources">
+  <p class="eyebrow">Chapter 8</p>
+  <h2>Practice plan</h2>
+  <p>Counterfactual reasoning gets better with short, frequent practice, like any skill. Worked examples first, then exercises that fade the support: that's what the research above found works. A suggested four weeks, 30–45 minutes a day:</p>
+  <ul class="checklist" id="plan"></ul>
+
+  <h3>Habits to keep after that</h3>
+  <ul>
+    <li>Before running any code you just wrote, say what it will print. Every surprise is a lesson about your model.</li>
+    <li>Before writing a function, write the data definition and two example inputs with their expected outputs.</li>
+    <li>When stuck on a bug for more than 15 minutes, stop and write the list of worlds on paper.</li>
+    <li>Keep a bug journal: symptom, cause, how you found it, how you'd find it faster. Patterns show up within a month.</li>
+  </ul>
+
+  <h3>Where to go next</h3>
+  <ul class="sources">
+    <li><a href="https://htdp.org/" target="_blank" rel="noopener"><em>How to Design Programs</em></a> (Felleisen et al.), free online. The design recipe: data definition, examples, template, code, tests. The most direct cure for "I don't know where to start."</li>
+    <li><a href="https://www.debuggingbook.org/" target="_blank" rel="noopener"><em>The Debugging Book</em></a> (Zeller et al.), free and interactive, in Python. Scientific debugging and the tools that automate it.</li>
+    <li><a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a>. Draws the names-and-heap diagram for your own code, step by step.</li>
+    <li><a href="https://exercism.org/" target="_blank" rel="noopener">Exercism</a>. Free exercises with human mentors who review your solutions.</li>
+    <li><a href="https://wizardzines.com/" target="_blank" rel="noopener">Julia Evans' zines</a>, including one on debugging. Short, friendly, practical.</li>
+  </ul>
+
+  <h3>Research mentioned</h3>
+  <ul class="sources">
+    <li>Marshall, J. (2026). <em>Not Everyone Can Code</em>. Abstract Heresies blog. The article this course responds to.</li>
+    <li>Pearl, J., &amp; Mackenzie, D. (2018). <em>The Book of Why</em>. The three-rung "ladder of causation."</li>
+    <li>Michaeli, T., &amp; Romeike, R. (2019). Improving debugging skills in the classroom: the effects of teaching a systematic debugging process. <em>WiPSCE '19</em>.</li>
+    <li>Margulieux, L., Morrison, B., &amp; Decker, A. (2020). Reducing withdrawal and failure rates in introductory programming with subgoal labeled worked examples. <em>International Journal of STEM Education</em>, 7(19).</li>
+    <li>Sorva, J. (2013). Notional machines and introductory programming education. <em>ACM Transactions on Computing Education</em>, 13(2).</li>
+    <li>Sentance, S., Waite, J., &amp; Kallia, M. (2019). Teaching computer programming with PRIMM. <em>Computer Science Education</em>, 29(2–3).</li>
+    <li>Ericson, B., et al. (2022). Parsons problems and beyond: systematic literature review and empirical study designs. <em>ITiCSE Working Group Reports</em>.</li>
+    <li>Zeller, A. (2009). <em>Why Programs Fail: A Guide to Systematic Debugging</em> (2nd ed.). Morgan Kaufmann.</li>
+    <li>Brooks, F. (1975). <em>The Mythical Man-Month</em>. Pike, R. (1989). <em>Notes on Programming in C</em>.</li>
+  </ul>
+  <label class="done-box"><input type="checkbox" data-done="practice"> I've started the four-week plan</label>
+  <footer>Single-file, offline course. Progress, predictions and scores stay in this browser.</footer>
+</section>
+
+  </main>
+</div>
+<script>
+"use strict";
+/* ---------- small helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("tlm:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("tlm:" + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+  clear() { try { Object.keys(localStorage).filter(k => k.startsWith("tlm:")).forEach(k => localStorage.removeItem(k)); } catch { } }
+};
+
+/* ---------- value formatter, like a browser console ---------- */
+function fmt(v, depth = 0, top = true) {
+  if (typeof v === "string") return top ? v : JSON.stringify(v);
+  if (typeof v === "number") return Object.is(v, -0) ? "-0" : String(v);
+  if (v === null || v === undefined || typeof v === "boolean" || typeof v === "bigint") return String(v);
+  if (typeof v === "function") return "[Function " + (v.name || "anonymous") + "]";
+  if (v instanceof Error) return v.name + ": " + v.message;
+  if (depth > 4) return "…";
+  if (Array.isArray(v)) return "[" + v.map(x => fmt(x, depth + 1, false)).join(", ") + "]";
+  if (v instanceof Map) return "Map(" + v.size + ") {" + (v.size ? " " + [...v].map(([k, x]) => fmt(k, depth + 1, false) + " => " + fmt(x, depth + 1, false)).join(", ") + " " : "") + "}";
+  if (v instanceof Set) return "Set(" + v.size + ") {" + (v.size ? " " + [...v].map(x => fmt(x, depth + 1, false)).join(", ") + " " : "") + "}";
+  if (v instanceof Promise) return "Promise { … }";
+  const ents = Object.entries(v);
+  return ents.length ? "{ " + ents.map(([k, x]) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k)) + ": " + fmt(x, depth + 1, false)).join(", ") + " }" : "{}";
+}
+
+/* ---------- examples: real functions, shown as their own source ---------- */
+const EX = {
+  primitive: function (console) {
+    let a = 5;
+    let b = a;
+    b = b + 1;
+    console.log(a);
+    console.log(b);
+  },
+  alias: function (console) {
+    const a = [1, 2];
+    const b = a;
+    b.push(3);
+    console.log(a);
+    console.log(a === b);
+  },
+  constobj: function (console) {
+    const user = { name: "Ada" };
+    user.name = "Grace";
+    console.log(user.name);
+    // Try adding this line and run again:
+    // user = { name: "Linus" };
+  },
+  spread: function (console) {
+    const original = { name: "Ada", tags: ["math"] };
+    const copy = { ...original };
+    copy.name = "Grace";
+    copy.tags.push("engines");
+    console.log(original.name);
+    console.log(original.tags);
+  },
+  tuplekey: function (console) {
+    const visited = new Map();
+    visited.set([2, 3], true);
+    console.log(visited.get([2, 3]));
+
+    // A string key compares by contents:
+    const visitedByKey = new Map();
+    visitedByKey.set("2,3", true);
+    console.log(visitedByKey.get("2,3"));
+  },
+  objvsmap: function (console) {
+    const asObject = {};
+    asObject[1] = "the number one";
+    asObject["1"] = "the string one";
+    console.log(Object.keys(asObject).length, asObject);
+
+    const asMap = new Map();
+    asMap.set(1, "the number one");
+    asMap.set("1", "the string one");
+    console.log(asMap.size, asMap);
+  },
+  groupby: function (console) {
+    const people = [
+      { name: "Ayşe", city: "Izmir" },
+      { name: "Ben", city: "Leeds" },
+      { name: "Can", city: "Izmir" },
+    ];
+    const byCity = new Map();
+    for (const person of people) {
+      if (!byCity.has(person.city)) byCity.set(person.city, []);
+      byCity.get(person.city).push(person.name);
+    }
+    console.log(byCity);
+  },
+  mfr: function (console) {
+    const orders = [
+      { id: 1, total: 30, paid: true },
+      { id: 2, total: 12, paid: false },
+      { id: 3, total: 55, paid: true },
+    ];
+    const paidTotals = orders.filter(o => o.paid).map(o => o.total);
+    const revenue = paidTotals.reduce((sum, t) => sum + t, 0);
+    console.log(paidTotals);
+    console.log(revenue);
+    console.log(orders.find(o => o.total > 50));
+  },
+  lookup: function (console) {
+    const shippingRates = { DE: 4.99, FR: 5.99, TR: 12.5 };
+
+    function shipping(country) {
+      const rate = shippingRates[country];
+      if (rate === undefined) throw new Error("No shipping rate for " + country);
+      return rate;
+    }
+
+    console.log(shipping("TR"));
+    console.log(shipping("XX"));
+  },
+  guards: function (console) {
+    function checkoutProblem(cart, user) {
+      if (!user) return "Please sign in";
+      if (cart.length === 0) return "Your cart is empty";
+      if (!user.address) return "Add a shipping address";
+      return "OK";
+    }
+    console.log(checkoutProblem([], { address: "Izmir" }));
+    console.log(checkoutProblem(["mug"], {}));
+  },
+  pure: function (console) {
+    let discount = 0.1;
+    function priceWithHiddenInput(price) {
+      return price - price * discount;
+    }
+    function pricePure(price, discount) {
+      return price - price * discount;
+    }
+    console.log(priceWithHiddenInput(100));
+    discount = 0.5; // somewhere far away, someone changes this
+    console.log(priceWithHiddenInput(100));
+    console.log(pricePure(100, 0.1));
+  },
+  assert: function (console) {
+    function assert(condition, message) {
+      if (!condition) throw new Error("Assertion failed: " + message);
+    }
+    function lineTotal(item) {
+      assert(typeof item.price === "number", "price is a number");
+      assert(Number.isInteger(item.qty), "qty is a whole number");
+      return item.price * item.qty;
+    }
+    console.log(lineTotal({ price: 8, qty: 2 }));
+    console.log(lineTotal({ price: 8, quantity: 1 }));
+    console.log("this line never runs");
+  },
+  boundary: function (console) {
+    // Raw data from an API, as it really arrives
+    const raw = [
+      { name: "Notebook", price: "4.50", qty: 2 },
+      { name: "Mug", price: 8, quantity: 1 },
+    ];
+    function parseItem(r) {
+      const qty = r.qty ?? r.quantity;
+      if (!Number.isInteger(qty)) throw new Error("Bad quantity on " + r.name);
+      return { name: String(r.name), price: Number(r.price), qty };
+    }
+    const items = raw.map(parseItem);
+    console.log(items);
+  },
+  tree: function (console) {
+    const thread = {
+      text: "Great post",
+      replies: [
+        { text: "Agreed", replies: [] },
+        { text: "Why?", replies: [
+          { text: "Because of chapter 3", replies: [] },
+        ] },
+      ],
+    };
+    function countComments(comment) {
+      let count = 1; // this comment
+      for (const reply of comment.replies) count += countComments(reply);
+      return count;
+    }
+    console.log(countComments(thread));
+  },
+  stale: function (console) {
+    function fakeSearch(query, ms) {
+      return new Promise(done => setTimeout(() => done("results for " + query), ms));
+    }
+    let screen = "";
+    async function onType(query, ms) {
+      const results = await fakeSearch(query, ms);
+      screen = results;
+      console.log("screen shows:", screen);
+    }
+    onType("ca", 300);  // slow network
+    onType("cat", 100); // fast network
+  },
+  stalefix: function (console) {
+    function fakeSearch(query, ms) {
+      return new Promise(done => setTimeout(() => done("results for " + query), ms));
+    }
+    let screen = "";
+    let latest = 0;
+    async function onType(query, ms) {
+      const id = ++latest;
+      const results = await fakeSearch(query, ms);
+      if (id !== latest) {
+        console.log("ignored stale:", results);
+        return;
+      }
+      screen = results;
+      console.log("screen shows:", screen);
+    }
+    onType("ca", 300);
+    onType("cat", 100);
+  },
+  wordcount: function (console) {
+    function wordCounts(text) {
+      const counts = new Map();
+      for (const word of text.toLowerCase().split(/\s+/)) {
+        if (word === "") continue;
+        counts.set(word, (counts.get(word) ?? 0) + 1);
+      }
+      return counts;
+    }
+    console.log(wordCounts("the cat saw the other cat"));
+  },
+};
+
+function sourceOf(fn) {
+  const s = fn.toString();
+  const body = s.slice(s.indexOf("{") + 1, s.lastIndexOf("}"));
+  const lines = body.replace(/^\n/, "").replace(/\s+$/, "").split("\n");
+  const ind = Math.min(...lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length));
+  return lines.map(l => l.slice(ind)).join("\n");
+}
+
+function makeConsole(out) {
+  const write = (cls, args) => {
+    const line = h("span", cls ? { class: cls } : {}, args.map(a => fmt(a)).join(" ") + "\n");
+    out.append(line);
+  };
+  return { log: (...a) => write("", a), error: (...a) => write("err", a), warn: (...a) => write("", a), info: (...a) => write("", a) };
+}
+
+function runCode(original, code, out) {
+  const cons = makeConsole(out);
+  const fail = e => out.append(h("span", { class: "err" }, "Uncaught " + (e && e.name ? e.name + ": " + e.message : String(e)) + "\n"));
+  let fn = original;
+  if (code !== sourceOf(original)) {
+    try { fn = new Function("console", code); }
+    catch (e) { fail(e); return; }
+  }
+  try {
+    const r = fn(cons);
+    if (r && typeof r.then === "function") r.catch(fail);
+  } catch (e) { fail(e); }
+  // also catch rejections from un-awaited async calls inside the example
+  const onRej = ev => { fail(ev.reason); ev.preventDefault(); };
+  window.addEventListener("unhandledrejection", onRej);
+  setTimeout(() => window.removeEventListener("unhandledrejection", onRej), 2000);
+}
+
+function buildRunner(box) {
+  const id = box.dataset.ex;
+  const fn = EX[id];
+  const src = sourceOf(fn);
+  const rows = Math.min(src.split("\n").length + 1, 22);
+  const ta = h("textarea", { class: "code", spellcheck: "false", rows, id: "code-" + id, "aria-label": "Editable code" });
+  ta.value = src;
+  const edited = h("span", { class: "edited", hidden: true }, "edited");
+  const pin = h("input", { type: "text", id: "pred-" + id, placeholder: "Type your prediction, then run", autocomplete: "off" });
+  pin.value = store.get("pred:" + id, "");
+  pin.addEventListener("input", () => store.set("pred:" + id, pin.value));
+  const out = h("pre", { class: "output", "aria-live": "polite" });
+  const run = h("button", { type: "button", onclick: () => {
+    out.textContent = "";
+    if (pin.value.trim()) out.append(h("span", { class: "cmp" }, "You predicted: " + pin.value.trim()));
+    runCode(fn, ta.value, out);
+  } }, "Run");
+  const reset = h("button", { type: "button", class: "quiet", onclick: () => { ta.value = src; edited.hidden = true; out.textContent = ""; } }, "Reset code");
+  ta.addEventListener("input", () => { edited.hidden = ta.value === src; });
+  ta.addEventListener("keydown", e => {
+    if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); const s = ta.selectionStart; ta.setRangeText("  ", s, ta.selectionEnd, "end"); edited.hidden = ta.value === src; }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run.click(); }
+  });
+  box.append(
+    h("div", { class: "runner-head" }, h("span", {}, "JavaScript · editable · Ctrl+Enter runs"), edited),
+    ta,
+    h("div", { class: "predict" }, h("label", { for: pin.id }, h("span", { class: "tag" }, "PREDICT"), box.dataset.prompt || "What will this print?"), pin),
+    h("div", { class: "row" }, run, reset),
+    out
+  );
+}
+$$(".runner").forEach(buildRunner);
+
+/* ---------- memory steppers ---------- */
+const STEPPERS = {
+  refs: {
+    code: [
+      'let price = 10;',
+      'let saved = price;',
+      'price = 12;',
+      'const cart = ["apple"];',
+      'const alias = cart;',
+      'cart.push("pear");',
+      'const copy = [...cart];',
+      'copy.push("plum");',
+    ],
+    steps: [
+      { line: 0, frames: [["global", []]], heap: [], note: "Nothing has run yet. Press Next to run line 1." },
+      { line: 1, frames: [["global", [["price", "10", 1]]]], heap: [], note: "The name price now points at the number 10." },
+      { line: 2, frames: [["global", [["price", "10"], ["saved", "10", 1]]]], heap: [], note: "saved gets its own copy of 10. Numbers, strings and booleans are copied." },
+      { line: 3, frames: [["global", [["price", "12", 1], ["saved", "10"]]]], heap: [], note: "price points at 12 now. saved is untouched. Assignment is not a permanent link." },
+      { line: 4, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1", 1]]]], heap: [["#1", '["apple"]', 1]], note: "The array is created in the heap as #1. The name cart holds an arrow to it, not the array itself." },
+      { line: 5, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1", 1]]]], heap: [["#1", '["apple"]']], note: "This copies the arrow, not the array. Two names, one array." },
+      { line: 6, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"]]]], heap: [["#1", '["apple", "pear"]', 1]], note: "push changes #1 itself. Both cart and alias see the change, because they point at the same thing. const didn't stop it: const only stops the name from being re-pointed." },
+      { line: 7, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2", 1]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear"]', 1]], note: "The spread [...cart] builds a brand-new array #2 with the same items." },
+      { line: 8, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2"]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear", "plum"]', 1]], note: "Only #2 changed. cart and alias still point at #1. Prediction check: what would alias.length be now? (2)" },
+    ],
+  },
+  frames: {
+    code: [
+      'function addTax(price, rate) {',
+      '  const tax = price * rate;',
+      '  return price + tax;',
+      '}',
+      'const subtotal = 50;',
+      'const total = addTax(subtotal, 0.2);',
+      'console.log(total);',
+    ],
+    steps: [
+      { line: 0, frames: [["global", []]], heap: [], note: "Nothing has run yet." },
+      { line: 1, frames: [["global", [["addTax", "ƒ function", 1]]]], heap: [], note: "Lines 1–4 only define the function. Nothing inside it runs yet." },
+      { line: 5, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50", 1]]]], heap: [], note: "subtotal points at 50." },
+      { line: 6, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50", 1], ["rate", "0.2", 1]]]], heap: [], note: "The call opens a new frame with its own names. price gets the value of subtotal (50). The global code waits." },
+      { line: 2, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10", 1]]]], heap: [], note: "tax exists only inside this frame." },
+      { line: 3, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10"]]]], heap: [], note: "return computes 50 + 10 = 60 and hands it back to whoever called." },
+      { line: 6, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60", 1]]]], heap: [], note: "The frame is gone, and tax with it. The global code resumes and total points at 60." },
+      { line: 7, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60"]]]], heap: [], out: "60", note: "Prints 60. Predict: what would console.log(tax) print here? (ReferenceError: tax is not defined)" },
+    ],
+  },
+};
+
+function buildStepper(panel) {
+  const def = STEPPERS[panel.dataset.stepper];
+  let i = 0;
+  const codeBox = h("div", { class: "code-lines" }, def.code.map((c, n) => h("div", {}, h("span", { class: "ln" }, String(n + 1)), c)));
+  const names = h("div"), heap = h("div"), note = h("div", { class: "step-note", "aria-live": "polite" });
+  const count = h("span", { class: "stepcount" });
+  const prev = h("button", { type: "button", class: "ghost", onclick: () => go(i - 1) }, "Back");
+  const next = h("button", { type: "button", onclick: () => go(i + 1) }, "Next line");
+  const restart = h("button", { type: "button", class: "quiet", onclick: () => go(0) }, "Restart");
+  const outLine = h("div", { class: "out-line" });
+  function value(v) { return /^#\d/.test(v) ? h("span", { class: "ref" }, "→ " + v) : v; }
+  function go(n) {
+    i = Math.max(0, Math.min(def.steps.length - 1, n));
+    const s = def.steps[i];
+    $$("div", codeBox).forEach((d, k) => d.classList.toggle("on", k === s.line - 1));
+    names.replaceChildren(h("h4", {}, "Names (frames)"), ...s.frames.map(([fname, vars]) =>
+      h("div", { class: "frame" }, h("div", { class: "fname" }, fname),
+        vars.length ? vars.map(([k, v, ch]) => h("div", { class: "cell" + (ch ? " changed" : "") }, h("span", { class: "k" }, k), h("span", {}, value(v))))
+          : h("div", { class: "cell" }, h("span", { class: "k" }, "(empty)"), h("span")))));
+    heap.replaceChildren(h("h4", {}, "Heap (arrays and objects)"), s.heap.length
+      ? h("div", { class: "frame" }, s.heap.map(([k, v, ch]) => h("div", { class: "cell" + (ch ? " changed" : "") }, h("span", { class: "k" }, k), h("span", {}, v))))
+      : h("div", { class: "empty" }, "Nothing in the heap yet."));
+    note.textContent = s.note;
+    outLine.textContent = s.out ? "Console: " + s.out : "";
+    count.textContent = "step " + i + " of " + (def.steps.length - 1);
+    prev.disabled = i === 0; next.disabled = i === def.steps.length - 1;
+  }
+  panel.append(codeBox, h("div", { class: "memory" }, names, heap), outLine, note, h("div", { class: "row" }, prev, next, restart, count));
+  go(0);
+}
+$$("[data-stepper]").forEach(buildStepper);
+
+/* ---------- bug lab ---------- */
+function cartTotal(items, coupon) {
+  let total = 0;
+  for (const item of items) {
+    total += item.price * item.qty;
+  }
+  if (coupon) {
+    total -= total * (coupon.percent / 100);
+  }
+  return Math.round(total * 100) / 100;
+}
+const cartA = [{ name: "Notebook", price: 4.5, qty: 2 }, { name: "Pen", price: "1.20", qty: 3 }];
+const cartB = [{ name: "Notebook", price: 4.5, qty: 2 }, { name: "Mug", price: 8, quantity: 1 }];
+const coupon = { percent: 10 };
+$("#lab-code").textContent = cartTotal.toString() + "\n\n" +
+  "const cartA = " + fmt(cartA, 0, false) + ";\n" +
+  "const cartB = " + fmt(cartB, 0, false) + ";\n" +
+  "const coupon = " + fmt(coupon, 0, false) + ";\n\n" +
+  "cartTotal(cartA, coupon); // " + cartTotal(cartA, coupon) + "   (works)\n" +
+  "cartTotal(cartB, coupon); // " + cartTotal(cartB, coupon) + "   (the bug)";
+
+const HYPS = [
+  { id: "h1", t: "A price is a string, like \"1.20\"", if: "Multiplying a string that looks like a number should give NaN. Test it: does \"1.20\" * 3 give NaN?" },
+  { id: "h2", t: "An item has no qty field", if: "item.qty would be undefined for that item, and 8 * undefined is NaN. Logging each item's subtotal would show NaN on one specific line." },
+  { id: "h3", t: "The coupon has no percent", if: "NaN would only appear with a coupon. Running the same cart without a coupon would give a normal number." },
+  { id: "h4", t: "The loop reads past the end of the array", if: "items[items.length] is undefined, and undefined.price throws a TypeError: \"Cannot read properties of undefined\". The symptom would be a crash, not NaN. Does that match the report?" },
+  { id: "h5", t: "The rounding creates NaN", if: "Math.round would have to return NaN for a normal number. Test it on 12.6." },
+];
+const labState = store.get("lab", { ruled: [], log: [] });
+const hypBox = $("#hyps");
+HYPS.forEach(hy => {
+  const cb = h("input", { type: "checkbox", id: "hyp-" + hy.id });
+  cb.checked = !labState.ruled.includes(hy.id);
+  const row = h("div", { class: "hyp" + (cb.checked ? "" : " ruled") }, cb, h("label", { for: cb.id }, hy.t),
+    h("details", {}, h("summary", {}, "If this were true…"), h("p", {}, hy.if)));
+  cb.addEventListener("change", () => {
+    row.classList.toggle("ruled", !cb.checked);
+    labState.ruled = HYPS.filter(x => !$("#hyp-" + x.id).checked).map(x => x.id);
+    store.set("lab", labState);
+  });
+  hypBox.append(row);
+});
+const EXPS = [
+  { t: "Run both carts with no coupon", run: () => "cartTotal(cartA, null) → " + cartTotal(cartA, null) + "\ncartTotal(cartB, null) → " + cartTotal(cartB, null),
+    means: "Cart B is NaN even without a coupon, so the coupon isn't needed for the bug. That rules out \"the coupon has no percent\"." },
+  { t: "Log each item's subtotal (price × qty) in cart B", run: () => cartB.map(it => it.name + ": " + fmt(it.price * it.qty)).join("\n"),
+    means: "The Notebook line is fine; the Mug line is NaN. The problem is in one item, not the loop or the rounding." },
+  { t: "Compute \"1.20\" * 3 on its own", run: () => "\"1.20\" * 3 → " + ("1.20" * 3),
+    means: "Multiplication converts the string to a number, so a string price doesn't make NaN. (It's still a smell: \"1.20\" + 3 would give \"1.203\".) Cart A also has a string price and works." },
+  { t: "Compute Math.round on a normal number", run: () => "Math.round(12.6 * 100) / 100 → " + Math.round(12.6 * 100) / 100 + "\nMath.round(NaN) → " + Math.round(NaN),
+    means: "Rounding only returns NaN when it's given NaN. It passes the bug along but doesn't create it." },
+  { t: "Log typeof price and qty for each item in cart B", run: () => cartB.map(it => it.name + ": price " + typeof it.price + ", qty " + typeof it.qty).join("\n"),
+    means: "The Mug's qty is undefined. Something is wrong with how that item stores its quantity." },
+  { t: "Print the Mug item exactly as it is", run: () => fmt(cartB[1], 0, false),
+    means: "There it is: the Mug has quantity, not qty. Whatever code added it to the cart used a different field name." },
+];
+const logList = $("#logbook");
+function renderLog() {
+  if (!labState.log.length) { logList.replaceChildren(h("li", { class: "small" }, "Run an experiment and the result is recorded here.")); return; }
+  logList.replaceChildren(...labState.log.map(n => { const e = EXPS[n]; return h("li", {}, h("strong", {}, e.t), h("pre", {}, e.run()), h("span", { class: "means" }, e.means)); }));
+}
+EXPS.forEach((e, n) => $("#exps").append(h("button", { type: "button", class: "ghost", onclick: () => {
+  if (!labState.log.includes(n)) labState.log.push(n);
+  store.set("lab", labState); renderLog();
+} }, e.t)));
+renderLog();
+$("#conclude").addEventListener("click", () => {
+  const v = $("#conclusion").value, fb = $("#lab-feedback");
+  const msgs = {
+    "": ["bad", "Pick the hypothesis your evidence leaves standing."],
+    h1: ["bad", "Cart A has a string price and works, and \"1.20\" * 3 is a number. Try the experiment that tests it."],
+    h3: ["bad", "Run cart B without a coupon. Does the NaN go away?"],
+    h4: ["bad", "Open \"If this were true…\" for this one. What symptom would that world produce?"],
+    h5: ["bad", "Math.round only returns NaN when it's given NaN. Where did the first NaN come from?"],
+    h2: ["good", "Right. The Mug item uses quantity instead of qty, so item.qty is undefined and 8 * undefined is NaN. Notice how you got here: five worlds, a few cheap checks, one survivor. The fix isn't to patch cartTotal. It's to make sure every item has the same shape where items enter the program. Chapter 3 and the \"checking at the boundary\" section in Chapter 6 show how."],
+  };
+  const [cls, text] = msgs[v];
+  fb.replaceChildren(h("div", { class: "feedback " + cls }, text));
+  if (v === "h2") labState.solved = true, store.set("lab", labState);
+});
+
+/* ---------- wolf fence pipeline ---------- */
+const PIPE = [
+  { d: "Trim spaces", c: "s.trim()", f: v => v.trim() },
+  { d: "Remove the currency", c: 's.replace(" EUR", "")', f: v => v.replace(" EUR", "") },
+  { d: "Parse to a number", c: "parseFloat(s)", f: v => parseFloat(v) },
+  { d: "Convert to cents", c: "Math.round(n * 100)", f: v => Math.round(v * 100) },
+  { d: "Multiply by quantity (3)", c: "cents * qty", f: v => v * 3 },
+  { d: "Apply 10% off for 3 or more", c: "qty >= 3 ? cents - 10 : cents", f: v => v - 10 },
+  { d: "Add shipping (499 cents)", c: "cents + 499", f: v => v + 499 },
+  { d: "Format as euros", c: '"€" + (cents / 100).toFixed(2)', f: v => "€" + (v / 100).toFixed(2) },
+];
+const pipeVals = [];
+PIPE.reduce((v, s) => { const r = s.f(v); pipeVals.push(r); return r; }, " 19.99 EUR ");
+let wolfChecks = new Set();
+function renderPipe() {
+  const box = $("#pipeline"); box.replaceChildren();
+  box.append(h("div", { class: "probe" }, h("span"), h("code", {}, 'input: " 19.99 EUR "')));
+  PIPE.forEach((s, n) => {
+    box.append(h("div", { class: "pstep" }, h("span", { class: "badge" }, String(n + 1)), h("span", { class: "what" }, s.d)));
+    if (n < PIPE.length - 1) {
+      const shown = wolfChecks.has(n);
+      box.append(h("div", { class: "probe" }, h("span", { class: "stem" }),
+        shown ? h("span", { class: "val" }, "after step " + (n + 1) + ": " + JSON.stringify(pipeVals[n]))
+          : h("button", { type: "button", class: "ghost", onclick: () => { wolfChecks.add(n); renderPipe(); } }, "Probe after step " + (n + 1))));
+    }
+  });
+  box.append(h("div", { class: "probe" }, h("span"), h("code", {}, "output: " + JSON.stringify(pipeVals[PIPE.length - 1]))));
+  $("#wolf-count").textContent = wolfChecks.size + (wolfChecks.size === 1 ? " check" : " checks");
+}
+$("#wolf-guess").append(...PIPE.map((s, n) => h("option", { value: String(n) }, "Step " + (n + 1) + ": " + s.d)));
+$("#wolf-check").addEventListener("click", () => {
+  const g = Number($("#wolf-guess").value), fb = $("#wolf-feedback");
+  if (g === 5) {
+    const k = wolfChecks.size;
+    fb.replaceChildren(h("div", { class: "feedback good" }, "Found it in " + k + " probe" + (k === 1 ? "" : "s") + ". Step 6 runs cents - 10, subtracting 10 cents instead of 10%: 5997 − 10 = 5987, where it should be 5997 × 0.9 ≈ 5397. " +
+      (k <= 3 ? "That's as good as halving gets for eight steps." : "Halving would have found it in three: probe after step 4 (right), then after 6 (wrong), then after 5 (right).")));
+  } else {
+    fb.replaceChildren(h("div", { class: "feedback bad" }, "Not that one. Probe on both sides of step " + (g + 1) + ": is the value right going in and wrong coming out?"));
+  }
+});
+$("#wolf-reset").addEventListener("click", () => { wolfChecks = new Set(); $("#wolf-feedback").replaceChildren(); renderPipe(); });
+renderPipe();
+
+/* ---------- field guide ---------- */
+const GUIDE = [
+  { n: "Object / record", q: "One thing with named parts.", pic: '<span>name: "Ada"</span><span>age: 36</span><span>email: …</span>',
+    fast: "Reading a field by name", slow: "Nothing, for a few fields. It's not meant for growing collections.",
+    js: '{ name: "Ada", age: 36 }', py: '{"name": "Ada"} or a dataclass',
+    use: "A user, an order, a settings object, one row of data.", smell: "Keys that are data, like user IDs. That's a collection: use a Map." },
+  { n: "Tuple", q: "A small fixed group where position is the meaning.", pic: "<span>41.0</span><span>28.9</span>",
+    fast: "Unpacking: const [lat, lng] = point", slow: "Readability, once it has more than 2–3 parts",
+    js: "[x, y]  (an array by convention)", py: "(x, y), immutable and usable as a dict key",
+    use: "Coordinates, returning two values, key–value pairs from Object.entries.", smell: "You keep checking which index means what. Name the fields with an object." },
+  { n: "Array / list", q: "Many things of the same kind, in order.", pic: "<span>0: msg</span><span>1: msg</span><span>2: msg</span><i>…</i>",
+    fast: "Item by position, adding at the end, looping in order", slow: "Finding by value, \"is X in here?\", inserting at the front",
+    js: "[a, b, c]", py: "[a, b, c]",
+    use: "Feeds, search results, rows to render, anything you show in order.", smell: "Calling .find(x => x.id === id) inside a loop. Build a Map by ID once." },
+  { n: "Map / dictionary", q: "Look things up by a key.", pic: '<span>"u42" → Ada</span><span>"u7" → Ben</span>',
+    fast: "Get, set, delete and check by key", slow: "Anything by position; finding by value instead of by key",
+    js: "new Map(), or a plain object for string keys", py: "dict",
+    use: "Users by ID, counts per word, caches, groups by category.", smell: "Two maps with the same keys kept in sync. Store one map of records." },
+  { n: "Set", q: "Is it in there? No duplicates.", pic: "<span>js</span><span>css</span><span>html</span>",
+    fast: "Add, delete, \"has X?\", removing duplicates", slow: "Getting the nth item (there's no position)",
+    js: "new Set([...])", py: "set()",
+    use: "Tags, selected checkboxes, visited pages, unique emails.", smell: "An array plus .includes() before every .push() to avoid duplicates." },
+  { n: "Stack", q: "Last in, first out.", pic: "<span>bottom</span><span>…</span><span>top ⇅</span>",
+    fast: "Push on top, pop from top", slow: "Reaching anything below the top",
+    js: "array.push() / array.pop()", py: "list.append() / list.pop()",
+    use: "Undo, back button, matching brackets, walking nested structures.", smell: "Taking from the bottom. You wanted a queue." },
+  { n: "Queue", q: "First in, first out.", pic: "<span>⇠ out</span><span>…</span><span>in ⇠</span>",
+    fast: "Add at the back, take from the front (with a real queue)", slow: "array.shift() on big arrays: it moves every item",
+    js: "array.push() / array.shift() for small queues", py: "collections.deque",
+    use: "Job and email queues, print queues, breadth-first search, rate limiting.", smell: "Using a queue when the most urgent item should go first. That's a priority queue (heap)." },
+  { n: "Tree", q: "Things that contain smaller things of the same kind.", pic: "<span>root</span><i>→</i><span>child</span><span>child</span><i>→</i><span>…</span>",
+    fast: "Walking parent to children, recursion", slow: "Finding a node with no index; moving subtrees around",
+    js: "{ value, children: [ … ] }", py: "the same, with dicts or classes",
+    use: "Comment threads, folders, menus, the DOM, org charts, JSON.", smell: "Flattening a tree into an array and then rebuilding the nesting by hand." },
+  { n: "Graph", q: "Things connected to any other things.", pic: "<span>ada</span><i>↔</i><span>ben</span><i>→</i><span>can</span><i>↺</i>",
+    fast: "\"Who is connected to X?\" when stored as a Map of Sets", slow: "Questions about paths without a proper algorithm (BFS, Dijkstra)",
+    js: "new Map([[\"ada\", new Set([\"ben\"])]])", py: "dict of sets, or networkx",
+    use: "Social follows, routes, dependencies between tasks, recommendations.", smell: "Going round in circles forever. Graphs can loop: track visited nodes in a Set." },
+];
+$("#guide").append(...GUIDE.map(g => h("article", { class: "card" },
+  h("h4", {}, g.n), h("p", { class: "q" }, g.q), h("div", { class: "pic", html: g.pic, "aria-hidden": "true" }),
+  h("dl", {}, h("dt", {}, "Fast"), h("dd", {}, g.fast), h("dt", {}, "Slow"), h("dd", {}, g.slow),
+    h("dt", {}, "Use for"), h("dd", {}, g.use), h("dt", {}, "Smell"), h("dd", {}, g.smell)),
+  h("pre", {}, "JS:     " + g.js + "\nPython: " + g.py))));
+
+/* ---------- membership race ---------- */
+function race() {
+  const n = Number($("#race-n").value);
+  const arr = Array.from({ length: n }, (_, i) => i * 2);
+  const set = new Set(arr);
+  const probes = Array.from({ length: 2000 }, () => Math.floor(Math.random() * n * 2));
+  let hits = 0;
+  let t0 = performance.now();
+  for (const p of probes) if (arr.includes(p)) hits++;
+  const tArr = performance.now() - t0;
+  t0 = performance.now();
+  for (const p of probes) if (set.has(p)) hits--;
+  const tSet = performance.now() - t0;
+  const max = Math.max(tArr, tSet, 0.001);
+  const row = (label, t) => h("div", { class: "race-row", title: label + ": " + t.toFixed(3) + " ms" },
+    h("code", {}, label), h("div", { class: "bar-track" }, h("div", { class: "bar", style: "width:" + Math.max(0.5, (t / max) * 100) + "%" })), h("span", { class: "t" }, t.toFixed(2) + " ms"));
+  $("#race-bars").replaceChildren(row("array.includes", tArr), row("set.has", tSet));
+  const ratio = tArr / Math.max(tSet, 0.001);
+  $("#race-verdict").textContent = ratio > 1.5
+    ? "With " + n.toLocaleString() + " items, the Set was about " + Math.round(ratio).toLocaleString() + "× faster."
+    : "With " + n.toLocaleString() + " items, the difference is too small to matter. Try a bigger collection.";
+}
+$("#race-run").addEventListener("click", race);
+$("#race-n").addEventListener("change", race);
+race();
+
+/* ---------- parsons ---------- */
+const PARSONS_LINES = [
+  "function wordCounts(text) {",
+  "  const counts = new Map();",
+  "  for (const word of text.toLowerCase().split(/\\s+/)) {",
+  '    if (word === "") continue;',
+  "    counts.set(word, (counts.get(word) ?? 0) + 1);",
+  "  }",
+  "  return counts;",
+  "}",
+];
+let parsonsOrder = [];
+function shuffleParsons() {
+  do { parsonsOrder = PARSONS_LINES.map((_, i) => i).sort(() => Math.random() - 0.5); }
+  while (parsonsOrder.every((v, i) => v === i));
+  renderParsons(); $("#parsons-feedback").replaceChildren();
+}
+function renderParsons(marks) {
+  const ul = $("#parsons");
+  ul.replaceChildren(...parsonsOrder.map((li, pos) => h("li", { class: marks ? (marks[pos] ? "ok" : "no") : "" },
+    h("button", { type: "button", "aria-label": "Move up", disabled: pos === 0, onclick: () => move(pos, -1) }, "↑"),
+    h("button", { type: "button", "aria-label": "Move down", disabled: pos === parsonsOrder.length - 1, onclick: () => move(pos, 1) }, "↓"),
+    h("code", {}, PARSONS_LINES[li]))));
+}
+function move(pos, d) {
+  const o = parsonsOrder; [o[pos], o[pos + d]] = [o[pos + d], o[pos]];
+  renderParsons(); $("#parsons-feedback").replaceChildren();
+}
+$("#parsons-check").addEventListener("click", () => {
+  const marks = parsonsOrder.map((li, pos) => PARSONS_LINES[li] === PARSONS_LINES[pos]);
+  renderParsons(marks);
+  const fb = $("#parsons-feedback");
+  if (marks.every(Boolean)) {
+    const out = h("pre", { class: "output" });
+    runCode(EX.wordcount, sourceOf(EX.wordcount), out);
+    fb.replaceChildren(h("div", { class: "feedback good" }, "Correct. Here it is running on \"the cat saw the other cat\". Notice the shape: a Map because you look words up by key, and (counts.get(word) ?? 0) + 1 to handle the first time a word appears."), out);
+  } else {
+    fb.replaceChildren(h("div", { class: "feedback bad" }, marks.filter(Boolean).length + " of " + marks.length + " lines are in the right place (green). Hint: a variable must exist before the loop that uses it."));
+  }
+});
+$("#parsons-shuffle").addEventListener("click", shuffleParsons);
+shuffleParsons();
+
+/* ---------- wizard ---------- */
+const WIZ = {
+  start: { q: "What are you storing?", o: [
+    ["One thing with several properties", "a user, an order, a settings panel", "single"],
+    ["A collection of many similar things", "products, messages, users", "coll"],
+    ["Things that contain other things of the same kind", "folders, replies to replies, nested menus", "R:tree"],
+    ["Things connected to each other in a web", "who follows whom, routes between cities, task dependencies", "R:graph"],
+  ] },
+  single: { q: "How many parts, and are they named?", o: [
+    ["2–3 values where the order is obvious, used briefly", "returning [min, max] from a function", "R:tuple"],
+    ["Named fields, or more than three values", "{ name, email, plan }", "R:record"],
+  ] },
+  coll: { q: "What will you do with it most often?", o: [
+    ["Show or process the items in order", "render a list, go through each one", "order"],
+    ["Find one item by a unique ID, name or key", "get the product with this SKU", "R:map"],
+    ["Ask \"is this in there?\", or keep items unique", "already liked? tags without duplicates", "R:set"],
+    ["Take items out in a particular order as you work", "undo, a job queue, most urgent first", "proc"],
+    ["Count or group things by some key", "orders per customer, words per frequency", "R:groupmap"],
+  ] },
+  order: { q: "Do you also need to look items up by ID often, and is the list large (hundreds or more)?", o: [
+    ["No, I mostly loop over it", "", "R:array"],
+    ["Yes, both order and fast lookup matter", "", "R:arraymap"],
+  ] },
+  proc: { q: "Which item should come out next?", o: [
+    ["The newest one (last in, first out)", "undo, back button, nested brackets", "R:stack"],
+    ["The oldest one (first in, first out)", "emails to send, print jobs, chat messages to process", "R:queue"],
+    ["The most important one", "task scheduler, top 10 scores, shortest route next", "R:heap"],
+  ] },
+};
+const RESULTS = {
+  record: { n: "Object / record", why: "Each field has a name, so code reads like the domain: order.total rather than order[3].", code: 'const order = { id: "A-1009", customer: "u42", total: 58.96, status: "paid" };', pit: "If you start adding keys like order[userId], you've switched to a collection. Use a Map for that part." },
+  tuple: { n: "Tuple (short array)", why: "Two values that travel together for a moment don't need names, and destructuring keeps the code short.", code: "function minMax(nums) { return [Math.min(...nums), Math.max(...nums)]; }\nconst [lo, hi] = minMax([3, 9, 4]);", pit: "If it lives longer than one line or anyone could swap the order, switch to { min, max }." },
+  array: { n: "Array of objects", why: "Arrays keep order and are made for looping, filtering, sorting and rendering.", code: "const messages = [\n  { id: 1, from: \"ada\", text: \"hi\" },\n  { id: 2, from: \"ben\", text: \"hello\" },\n];\nmessages.filter(m => m.from === \"ada\");", pit: "Searching it by ID inside another loop. That's the moment to add a Map." },
+  arraymap: { n: "Array plus a Map index", why: "Keep the array for order and build a Map from ID to the same objects for instant lookup. Both point at the same objects, so there's no copying.", code: "const products = await loadProducts();          // array, in display order\nconst byId = new Map(products.map(p => [p.id, p])); // index\nbyId.get(\"sku-42\");", pit: "Remember to update both when adding or removing. Wrap that in one function so they can't drift apart." },
+  map: { n: "Map (dictionary)", why: "Lookup by key takes the same time whether there are 10 entries or 10 million.", code: "const usersById = new Map();\nusersById.set(\"u42\", { name: \"Ada\" });\nusersById.get(\"u42\");", pit: "Keys are compared by identity for objects and arrays. Use strings or numbers as keys, like \"2,3\" for a coordinate." },
+  set: { n: "Set", why: "A Set answers \"is X in here?\" instantly and can't hold duplicates, so there's nothing to check by hand.", code: "const liked = new Set();\nliked.add(\"post-7\");\nliked.has(\"post-7\"); // true\n[...new Set(emails)]; // de-duplicate an array", pit: "Sets have no position. If you also need order or extra data per item, use a Map." },
+  groupmap: { n: "Map from key to count or array", why: "Grouping is a lookup by key, repeated. The Map's values hold the count or the list for each key.", code: "const counts = new Map();\nfor (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);", pit: "Forgetting the first-time case. That's what the ?? 0 or the has() check is for." },
+  stack: { n: "Stack", why: "The last thing you did is the first thing you undo. push and pop at the end of an array are instant.", code: "const undo = [];\nundo.push(action);\nconst last = undo.pop();", pit: "For undo with redo, use two stacks: pop from undo, push onto redo." },
+  queue: { n: "Queue", why: "Work is handled in the order it arrived, which is fair and predictable.", code: "const jobs = [];\njobs.push(\"email ada\");   // enqueue\nconst next = jobs.shift(); // dequeue", pit: "array.shift() moves every remaining item. Fine for hundreds; for big or fast queues use a real queue (a library, or Python's deque)." },
+  heap: { n: "Priority queue (heap)", why: "A heap always hands you the most important item next without sorting everything each time.", code: "// Small data: just sort\ntasks.sort((a, b) => b.priority - a.priority);\nconst next = tasks.shift();\n// Large or constantly changing data: use a heap library", pit: "Re-sorting a huge array on every insert. That's the job a heap does efficiently." },
+  tree: { n: "Tree", why: "Each node holds its own children, so the data matches how people think about it, and recursion walks it naturally.", code: "const folder = { name: \"src\", children: [\n  { name: \"app.js\", children: [] },\n  { name: \"lib\", children: [ /* … */ ] },\n] };", pit: "Very deep trees can overflow the call stack with recursion. Use an explicit stack for those." },
+  graph: { n: "Graph (Map of Sets)", why: "Each node lists who it connects to. \"Who does Ada follow?\" is a single lookup.", code: "const follows = new Map([\n  [\"ada\", new Set([\"ben\", \"can\"])],\n  [\"ben\", new Set([\"ada\"])],\n]);", pit: "Graphs can have cycles. Any walk needs a Set of visited nodes or it may never stop." },
+};
+let wizPath = ["start"];
+let wizCrumbs = [];
+function renderWiz() {
+  const cur = wizPath[wizPath.length - 1];
+  const body = $("#wiz-body");
+  $("#wiz-crumbs").textContent = wizCrumbs.join("  ›  ");
+  $("#wiz-back").disabled = wizPath.length === 1;
+  if (cur.startsWith("R:")) {
+    const r = RESULTS[cur.slice(2)];
+    body.replaceChildren(h("p", { class: "eyebrow" }, "Recommendation"), h("p", { class: "result-name" }, r.n), h("p", {}, r.why),
+      h("pre", { class: "static" }, r.code), h("div", { class: "note" }, h("p", {}, h("strong", {}, "Watch out: "), r.pit)));
+    return;
+  }
+  const node = WIZ[cur];
+  body.replaceChildren(h("p", { class: "wq" }, node.q), h("div", { class: "opts" }, node.o.map(([label, hint, to]) =>
+    h("button", { type: "button", onclick: () => { wizPath.push(to); wizCrumbs.push(label); renderWiz(); } }, label, hint ? h("small", {}, hint) : null))));
+}
+$("#wiz-back").addEventListener("click", () => { if (wizPath.length > 1) { wizPath.pop(); wizCrumbs.pop(); renderWiz(); } });
+$("#wiz-restart").addEventListener("click", () => { wizPath = ["start"]; wizCrumbs = []; renderWiz(); });
+renderWiz();
+
+/* ---------- drills ---------- */
+const DRILLS = [
+  { q: "A user looks at their profile, so the server needs that user's data from a few million users by ID, on every request.", o: ["Array", "Map", "Set", "Queue"], a: 1,
+    why: "Lookup by a unique key is exactly what a Map (or a database index, which is the same idea on disk) is for. Searching an array would scan millions of entries per request.", code: "usersById.get(req.userId)" },
+  { q: "A blog post's tags. Adding \"css\" twice should still leave one \"css\".", o: ["Array", "Set", "Stack", "Tuple"], a: 1,
+    why: "Uniqueness comes free with a Set. With an array you'd have to check includes() before every push, and someone will forget.", code: "post.tags = new Set([\"css\", \"html\"]);\npost.tags.add(\"css\"); // still 2" },
+  { q: "Undo in a drawing app: Ctrl+Z reverses the most recent action first.", o: ["Queue", "Stack", "Set", "Map"], a: 1,
+    why: "Last in, first out. Each action is pushed; undo pops the top. Add a second stack for redo.", code: "undo.push(action); const last = undo.pop(); redo.push(last);" },
+  { q: "A newsletter service sends emails in the order people signed up.", o: ["Stack", "Queue", "Tree", "Set"], a: 1,
+    why: "First in, first out is a queue. Real systems use a durable queue (Redis, SQS, RabbitMQ) so jobs survive a crash.", code: "jobs.push(signup);  // later: const next = jobs.shift();" },
+  { q: "A comment section where any comment can have replies, and replies can have replies.", o: ["Array", "Tree", "Graph", "Map"], a: 1,
+    why: "Comments contain comments of the same kind, so it's a tree, and rendering it is naturally recursive. (In a database it's often stored flat with a parentId and rebuilt into a tree for display.)", code: "{ text, replies: [ { text, replies: [] } ] }" },
+  { q: "A social app suggests \"people your friends follow\".", o: ["Tree", "Graph", "Queue", "Tuple"], a: 1,
+    why: "Follows connect anyone to anyone and can loop back, so it's a graph. A Map from user to a Set of followed users makes \"friends of friends\" two quick lookups.", code: "for (const f of follows.get(me)) for (const ff of follows.get(f)) …" },
+  { q: "Count how many times each word appears in a document.", o: ["Array", "Set", "Map", "Stack"], a: 2,
+    why: "Word to count is a key-to-value lookup that you update over and over. A Set would lose the counts; an array would need a search for every word.", code: "counts.set(w, (counts.get(w) ?? 0) + 1)" },
+  { q: "A function needs to return both the smallest and the largest value of a list.", o: ["Tuple", "Map", "Set", "Queue"], a: 0,
+    why: "Two values that belong together for a moment: a tuple ([min, max]) with destructuring is clear and short. An object { min, max } is just as good and safer if the result travels far.", code: "const [lo, hi] = minMax(nums);" },
+  { q: "A store location to show on a map: latitude and longitude.", o: ["Tuple [lat, lng]", "Object { lat, lng }", "Set", "Array of strings"], a: 1,
+    why: "Both work, but libraries disagree about the order ([lat, lng] in Leaflet, [lng, lat] in GeoJSON). Named fields can't be swapped by accident. Convert to a tuple only at the moment a library wants one.", code: "const shop = { lat: 38.42, lng: 27.14 };" },
+  { q: "App settings: theme, language, font size. The fields are known in advance.", o: ["Map", "Object / record", "Array", "Set"], a: 1,
+    why: "A fixed set of named fields is a record. Use a Map when the keys are data you don't know ahead of time, like user IDs.", code: "const settings = { theme: \"dark\", language: \"tr\", fontSize: 16 };" },
+  { q: "A sign-up form must tell you instantly whether a username is taken, checking against 50,000 names held in memory.", o: ["Array with includes()", "Set", "Stack", "Sorted array"], a: 1,
+    why: "\"Is it in there?\" is the Set's job. If you also need data about each user, use a Map keyed by username. (In real life the database's unique index does this.)", code: "taken.has(name.toLowerCase())" },
+  { q: "Browser back and forward buttons.", o: ["One queue", "Two stacks", "A Set", "A tree"], a: 1,
+    why: "Back pops from the back stack and pushes onto the forward stack. Visiting a new page clears forward. Same shape as undo and redo.", code: "forward.push(current); current = back.pop();" },
+  { q: "A tic-tac-toe or chess board.", o: ["2D array (array of rows)", "Set", "Queue", "Graph"], a: 0,
+    why: "A grid with fixed rows and columns is an array of arrays: board[row][col]. Position is the meaning.", code: "const board = [[\"X\", \"\", \"O\"], [\"\", \"X\", \"\"], [\"\", \"\", \"O\"]];" },
+  { q: "Cache the results of a slow price calculation, keyed by product ID and country.", o: ["Array", "Map with a string key", "Set", "Stack"], a: 1,
+    why: "A cache is a lookup by input. Combine the parts into one string key, because a Map compares array keys by identity, not contents.", code: "const key = productId + \"|\" + country;\nif (!cache.has(key)) cache.set(key, slowPrice(productId, country));" },
+  { q: "A maze solver needs to remember which cells it has already visited.", o: ["Array of [x, y] arrays", "Set of \"x,y\" strings", "Stack of booleans", "Object with arrays as keys"], a: 1,
+    why: "\"Have I been here?\" is a Set question. Strings like \"3,4\" compare by content, unlike [3, 4]. An array of arrays would also need a full scan for each check.", code: "visited.add(x + \",\" + y); visited.has(x + \",\" + y);" },
+  { q: "A live leaderboard that always shows the top 10 of a constantly changing set of scores.", o: ["Unsorted array", "Priority queue / heap or sorted structure", "Set", "Stack"], a: 1,
+    why: "\"Most important first\" is a priority queue. For a few hundred players, sorting an array is fine. At scale, a heap or a database index (or Redis sorted sets) avoids re-sorting everything.", code: "players.sort((a, b) => b.score - a.score).slice(0, 10) // fine when small" },
+];
+const drillAns = store.get("drills", {});
+function renderDrills() {
+  const list = $("#drill-list"); list.replaceChildren();
+  let right = 0, done = 0;
+  DRILLS.forEach((d, n) => {
+    const pick = drillAns[n];
+    if (pick != null) { done++; if (pick === d.a) right++; }
+    const box = h("div", { class: "drill" }, h("p", { class: "dq" }, h("span", { class: "num" }, String(n + 1).padStart(2, "0")), d.q),
+      h("div", { class: "opts" }, d.o.map((label, k) => h("button", {
+        type: "button", disabled: pick != null,
+        class: pick != null ? (k === d.a ? "right" : (k === pick ? "wrong" : "")) : "",
+        onclick: () => { drillAns[n] = k; store.set("drills", drillAns); renderDrills(); },
+      }, label))));
+    if (pick != null) box.append(h("div", { class: "why" }, h("strong", {}, pick === d.a ? "Yes. " : "Better: " + d.o[d.a] + ". "), d.why, h("pre", {}, d.code)));
+    list.append(box);
+  });
+  $("#drill-score").textContent = "Score: " + right + " / " + done + " answered (of " + DRILLS.length + ")";
+}
+$("#drill-reset").addEventListener("click", () => { for (const k in drillAns) delete drillAns[k]; store.set("drills", drillAns); renderDrills(); });
+renderDrills();
+
+/* ---------- impossible states ---------- */
+const COMBOS = [];
+for (const l of [false, true]) for (const e of [false, true]) for (const d of [false, true]) COMBOS.push([l, e, d]);
+function comboInfo([l, e, d]) {
+  if (!l && !e && !d) return [true, "idle", "Type to search."];
+  if (l && !e && !d) return [true, "loading", "⟳ Loading…"];
+  if (!l && e && !d) return [true, "error", "Couldn't load results. Try again."];
+  if (!l && !e && d) return [true, "success", "12 results"];
+  if (l && e && !d) return [false, "?", "⟳ Loading… and also an error message"];
+  if (l && !e && d) return [false, "?", "⟳ Spinner on top of results. Stale data or new data?"];
+  if (!l && e && d) return [false, "?", "An error message above results. Which one is true?"];
+  return [false, "?", "Spinner, error and results all at once"];
+}
+function renderBools() {
+  const cur = [$("#b-loading").checked, $("#b-error").checked, $("#b-data").checked];
+  const [ok, name, screen] = comboInfo(cur);
+  $("#b-screen").textContent = screen;
+  $("#b-verdict").replaceChildren(ok ? h("span", { class: "verdict-ok" }, "Valid state: " + name) : h("span", { class: "verdict-no" }, "Impossible state. Nothing should ever produce this, yet the types allow it."));
+  $("#combos").replaceChildren(h("thead", {}, h("tr", {}, ["isLoading", "hasError", "hasData", "meaning"].map(t => h("th", {}, t)))),
+    h("tbody", {}, COMBOS.map(c => { const [cok, cname] = comboInfo(c); return h("tr", { class: c.every((v, i) => v === cur[i]) ? "cur" : "" }, c.map(v => h("td", {}, String(v))), h("td", { class: cok ? "verdict-ok" : "verdict-no" }, cok ? cname : "impossible")); })));
+}
+["#b-loading", "#b-error", "#b-data"].forEach(s => $(s).addEventListener("change", renderBools));
+renderBools();
+
+/* ---------- interleavings ---------- */
+const STEPS3 = ["local = balance", "local = local + 10", "balance = local"];
+const STEPS1 = ["balance = balance + 10  (one step)"];
+let inter;
+function interReset() {
+  inter = { balance: 100, A: { pc: 0, local: null }, B: { pc: 0, local: null }, sched: [] };
+  $("#inter-all-out").replaceChildren();
+  renderInter();
+}
+function stepsNow() { return $("#inter-atomic").checked ? STEPS1 : STEPS3; }
+function doStep(state, who, steps) {
+  const t = state[who];
+  if (steps.length === 1) { state.balance += 10; }
+  else if (t.pc === 0) t.local = state.balance;
+  else if (t.pc === 1) t.local = t.local + 10;
+  else state.balance = t.local;
+  t.pc++; state.sched.push(who);
+}
+function renderInter() {
+  const steps = stepsNow();
+  for (const who of ["A", "B"]) {
+    const t = inter[who];
+    $("#t" + who).replaceChildren(
+      h("div", { class: "th" }, h("span", {}, "Task " + who), h("span", {}, "deposit €10")),
+      h("ol", {}, steps.map((s, k) => h("li", { class: k < t.pc ? "did" : (k === t.pc ? "next" : "") }, s))),
+      h("div", { class: "loc" }, steps.length > 1 ? "local = " + (t.local == null ? "(not set)" : "€" + t.local) : "no local copy"),
+      h("button", { type: "button", disabled: t.pc >= steps.length, onclick: () => { doStep(inter, who, steps); renderInter(); } }, t.pc >= steps.length ? "Finished" : "Run next step of " + who));
+  }
+  $("#balance").textContent = "€" + inter.balance;
+  $("#sched").textContent = inter.sched.length ? inter.sched.join(" ") : "(none)";
+  const finished = inter.A.pc >= steps.length && inter.B.pc >= steps.length;
+  const v = $("#inter-verdict");
+  if (!finished) { v.textContent = "Expected when both finish: €120"; v.className = "small"; }
+  else if (inter.balance === 120) { v.textContent = "Correct: €120. This order was safe."; v.className = "small verdict-ok"; }
+  else { v.textContent = "Lost update: €" + inter.balance + ". One deposit vanished."; v.className = "small verdict-no"; }
+}
+function allOrders(nA, nB) {
+  if (nA === 0 && nB === 0) return [[]];
+  const out = [];
+  if (nA > 0) for (const r of allOrders(nA - 1, nB)) out.push(["A", ...r]);
+  if (nB > 0) for (const r of allOrders(nA, nB - 1)) out.push(["B", ...r]);
+  return out;
+}
+$("#inter-all").addEventListener("click", () => {
+  const steps = stepsNow();
+  const orders = allOrders(steps.length, steps.length);
+  let good = 0;
+  const chips = orders.map(o => {
+    const s = { balance: 100, A: { pc: 0, local: null }, B: { pc: 0, local: null }, sched: [] };
+    o.forEach(w => doStep(s, w, steps));
+    const ok = s.balance === 120; if (ok) good++;
+    return h("span", { class: "chip " + (ok ? "ok" : "lost"), title: "ends at €" + s.balance }, o.join("") + " €" + s.balance);
+  });
+  $("#inter-all-out").replaceChildren(
+    h("p", { style: "margin-top:0.9rem;" }, h("strong", {}, orders.length + " possible orders: " + good + " correct, " + (orders.length - good) + " lose a deposit.")),
+    h("div", { class: "chips" }, chips),
+    h("p", { class: "small", style: "margin-top:0.6rem;" }, steps.length > 1
+      ? "Only the orders where one task finishes entirely before the other reads are safe. A test that happens to run AAABBB passes, and the bug ships."
+      : "With the read-change-write made indivisible, there are only two orders, and both are correct. You didn't get better at imagining histories; you removed them."));
+});
+$("#inter-reset").addEventListener("click", interReset);
+$("#inter-atomic").addEventListener("change", interReset);
+interReset();
+
+/* ---------- practice plan ---------- */
+const PLAN = [
+  "Week 1: Redo Chapter 1 with your own code. Draw the names-and-heap table by hand for three functions you wrote last month.",
+  "Week 1: For every snippet you run this week, write the prediction first. Count your surprises.",
+  "Week 2: Read the first part of How to Design Programs and follow the design recipe on five small functions, writing the data definition first.",
+  "Week 2: Solve five easy Exercism exercises. Before submitting, write the edge-case list from Chapter 6 and test each one.",
+  "Week 3: Next time you hit a real bug, use the logbook: symptom, list of worlds, experiments, conclusion. Keep it even if the bug turns out simple.",
+  "Week 3: Refactor one piece of your own code that uses several booleans for state into a single status field.",
+  "Week 4: Pick a project feature and run it through the Chapter 4 helper. Write the data definition before any code.",
+  "Week 4: Find one read-change-write in your code (a counter, a cart update, a form save) and ask: what if two of these ran at once?",
+];
+const planDone = store.get("plan", []);
+$("#plan").append(...PLAN.map((t, n) => {
+  const cb = h("input", { type: "checkbox", id: "plan-" + n });
+  cb.checked = planDone.includes(n);
+  cb.addEventListener("change", () => { const i = planDone.indexOf(n); if (cb.checked && i < 0) planDone.push(n); if (!cb.checked && i >= 0) planDone.splice(i, 1); store.set("plan", planDone); });
+  return h("li", {}, cb, h("label", { for: cb.id }, t));
+}));
+
+/* ---------- table of contents and progress ---------- */
+const chapters = $$(".chapter");
+const done = new Set(store.get("done", []));
+const doneBoxes = $$("[data-done]");
+$("#toc").append(...chapters.map((c, n) => h("li", {}, h("a", { href: "#" + c.id, "data-toc": c.id },
+  h("span", { class: "n" }, String(n)), h("span", {}, c.dataset.title), h("span", { class: "done", "aria-label": "done" }, "✓")))));
+function renderProgress() {
+  doneBoxes.forEach(b => { b.checked = done.has(b.dataset.done); });
+  $$("[data-toc]").forEach(a => a.classList.toggle("is-done", done.has(a.dataset.toc)));
+  const total = doneBoxes.length, k = doneBoxes.filter(b => done.has(b.dataset.done)).length;
+  $("#meter-fill").style.width = (k / total * 100) + "%";
+  $("#meter-text").textContent = k + " of " + total + " chapters";
+}
+doneBoxes.forEach(b => b.addEventListener("change", () => {
+  if (b.checked) done.add(b.dataset.done); else done.delete(b.dataset.done);
+  store.set("done", [...done]); renderProgress();
+}));
+renderProgress();
+
+$("#reset-btn").addEventListener("click", () => { $("#reset-confirm").hidden = false; });
+$("#reset-yes").addEventListener("click", () => { store.clear(); location.reload(); });
+
+/* ---------- theme toggle ---------- */
+const THEMES = ["system", "light", "dark"];
+function applyTheme(t) {
+  if (t === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  $("#theme-btn").textContent = "Theme: " + t;
+}
+let theme = store.get("theme", "system");
+applyTheme(theme);
+$("#theme-btn").addEventListener("click", () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; store.set("theme", theme); applyTheme(theme); });
+</script>
+</body>
+</html>
