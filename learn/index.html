@@ -72,6 +72,11 @@ a { color: var(--accent); }
 code, kbd, pre, textarea.code { font-family: var(--f-mono); font-size: 0.92em; }
 /* Show code exactly as typed: no merged symbols like === drawn as one glyph. */
 code, kbd, pre, textarea, .code-lines, .parsons, .chip, .out-line, .output { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+table.primer { table-layout: fixed; }
+table.primer th:nth-child(1) { width: 24%; } table.primer th:nth-child(2) { width: 33%; }
+table.primer td:first-child { white-space: normal; }
+table.primer td code { white-space: pre-wrap; }
+@media (max-width: 640px) { table.primer { table-layout: auto; min-width: 36rem; } }
 .syntax { border-top: 1px solid var(--rule); padding: 0.6rem 1rem 0.8rem; background: var(--sheet); }
 .syntax summary { cursor: pointer; font: 600 var(--s-xs)/1.4 var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 .syntax dl { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 0.5rem 1.2rem; margin: 0.75rem 0 0; font-size: var(--s-sm); }
@@ -407,31 +412,97 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <p>You can't imagine a world where "this variable is null" unless you know how a variable gets its value in the first place. Debugging is a comparison: what you think the machine did versus what it did. If your picture of the machine is vague, there is nothing to compare against. So we start by making the picture exact.</p>
 
   <h3>Reading JavaScript: the syntax this course uses</h3>
-  <p>You don't need to memorise this. Every code box below has a <strong>Syntax in this example</strong> panel that explains its own lines. Come back here when a symbol looks unfamiliar.</p>
+  <p>Every program, whatever the language, does the same few jobs: it <strong>remembers</strong> values, <strong>groups</strong> them, <strong>decides</strong> what to do, <strong>repeats</strong> work, <strong>packages</strong> steps so they can be reused, and <strong>shows</strong> results. Each piece of syntax exists for one of those jobs. Learn the job first and the symbols stop being arbitrary.</p>
+  <p>Here's a small real program: the cart summary that sits at the bottom of almost every shop page. It uses nearly everything in the tables below. Read the comments (the grey text after <code>//</code>), predict the message, then run it.</p>
+  <div class="runner" data-ex="primer" data-prompt="What message does the customer see? Then change the Backpack price to 29 and predict again."></div>
+  <p>The tables below go through the same pieces one job at a time. The last column says when you'd reach for each one, so you know what problem it solves. Each example in the course also has its own "Syntax in this example" panel.</p>
+
+  <h4>Job 1 · Remember a value</h4>
+  <p>Programs need names for the values they work with, so they can use them again later.</p>
   <div class="table-wrap">
-    <table>
-      <thead><tr><th>You see</th><th>It means</th></tr></thead>
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
       <tbody>
-        <tr><td><code>let x = 5;</code></td><td>Create a variable named <code>x</code> pointing at 5. A <code>let</code> variable can be pointed at something else later. The <code>;</code> ends the statement.</td></tr>
-        <tr><td><code>const x = 5;</code></td><td>Create a variable that can't be pointed elsewhere later. Short for "constant". Use it by default, and <code>let</code> only when you need to reassign.</td></tr>
-        <tr><td><code>x = x + 1;</code></td><td>Reassign an existing variable. Read <code>=</code> as "becomes", not "equals".</td></tr>
-        <tr><td><code>x += 2;</code> <code>x++</code></td><td>Shortcuts for <code>x = x + 2</code> and <code>x = x + 1</code>.</td></tr>
-        <tr><td><code>5</code> <code>4.5</code> <code>"Ada"</code> <code>true</code></td><td>Values: a number, a number with decimals, a string (text, in quotes), a boolean (<code>true</code> or <code>false</code>).</td></tr>
-        <tr><td><code>undefined</code> <code>null</code> <code>NaN</code></td><td>"No value here", "deliberately empty", and "Not a Number": the result of maths that went wrong, like <code>8 * undefined</code>.</td></tr>
-        <tr><td><code>[1, 2, 3]</code></td><td>An array: an ordered list. The square brackets create it, whether you store it with <code>const</code>, <code>let</code> or not at all. <code>list[0]</code> is the first item; <code>list.length</code> is how many there are.</td></tr>
-        <tr><td><code>{ name: "Ada", age: 36 }</code></td><td>An object: one thing with named parts (key: value pairs). <code>user.name</code> reads a part; <code>user["name"]</code> does the same with the key in a string or variable.</td></tr>
-        <tr><td><code>a.b</code> <code>a.b()</code></td><td>The dot reaches inside a value. With parentheses after it, it calls a function that belongs to that value, like <code>list.push(4)</code>.</td></tr>
-        <tr><td><code>function add(a, b) { return a + b; }</code></td><td>Defines a function named <code>add</code> with two inputs (parameters). The code in <code>{ }</code> runs only when it's called: <code>add(2, 3)</code>. <code>return</code> ends it and hands back a value.</td></tr>
-        <tr><td><code>x =&gt; x * 2</code></td><td>An arrow function: a short unnamed function. "Given <code>x</code>, give back <code>x * 2</code>."</td></tr>
-        <tr><td><code>===</code> <code>!==</code></td><td>"Is the same as" and "is not the same as". Each gives <code>true</code> or <code>false</code>. Three characters: one <code>=</code> assigns, and <code>==</code> is an older, looser comparison to avoid.</td></tr>
-        <tr><td><code>&lt;</code> <code>&gt;=</code> <code>!</code> <code>&amp;&amp;</code> <code>||</code></td><td>Less than, greater or equal, not, and, or.</td></tr>
-        <tr><td><code>a ?? b</code></td><td>Use <code>a</code>, unless it's <code>null</code> or <code>undefined</code>; then use <code>b</code>.</td></tr>
-        <tr><td><code>if (cond) { … } else { … }</code></td><td>Run the first block when the condition is true, otherwise the second.</td></tr>
-        <tr><td><code>for (const item of list) { … }</code></td><td>Run the block once for each item in the list, with <code>item</code> pointing at the current one.</td></tr>
-        <tr><td><code>new Map()</code> <code>new Set()</code></td><td><code>new</code> builds a fresh object of a built-in type. Chapter 3 explains Map and Set.</td></tr>
-        <tr><td><code>...list</code></td><td>Spread: copies all the items (or key–value pairs) into the array or object being built, as in <code>[...list]</code>.</td></tr>
-        <tr><td><code>console.log(x)</code></td><td>Prints <code>x</code> in the output area. In a real browser it prints to the developer console (F12).</td></tr>
-        <tr><td><code>// note</code> <code>/* note */</code></td><td>Comments. The computer ignores them.</td></tr>
+        <tr><td><code>const FREE_SHIPPING_FROM = 50;</code></td><td>Creates a name pointing at a value. The name can never be pointed at anything else. Short for "constant".</td><td>Most values are set once and then only read: a shop setting like this one, a cart loaded from the server, a button you grabbed with <code>document.querySelector("#buy")</code>. Use <code>const</code> by default. When debugging, a <code>const</code> is one less thing that could have changed behind your back.</td></tr>
+        <tr><td><code>let total = 0;</code></td><td>Creates a name that you are allowed to point at a new value later.</td><td>For values that must change while the program runs: a running total, a counter, the current page number, whether a menu is open.</td></tr>
+        <tr><td><code>total = total + 9;</code></td><td>Points an existing <code>let</code> name at a new value. Read <code>=</code> as "becomes", not "equals".</td><td>Updating something: adding an item's price to the total, moving to the next page.</td></tr>
+        <tr><td><code>total += 9;</code> <code>count++</code></td><td>Shortcuts for <code>total = total + 9</code> and <code>count = count + 1</code>.</td><td>You'll see these in almost every loop and counter. Same meaning, less typing.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 2 · Know what kind of value you have</h4>
+  <p>The computer treats text, numbers and yes/no answers differently. Many bugs are a value of the wrong kind.</p>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>4.5</code> <code>"Ada"</code> <code>true</code></td><td>A number, a string (text, always in quotes) and a boolean (<code>true</code> or <code>false</code>).</td><td>Numbers for prices, quantities and sizes; strings for names, messages and IDs; booleans for yes/no facts like <code>isLoggedIn</code>. Watch out: anything typed into a form arrives as a string, which is why <code>"2" + 2</code> gives <code>"22"</code> instead of 4.</td></tr>
+        <tr><td><code>undefined</code> <code>null</code> <code>NaN</code></td><td>"There's no value here", "deliberately empty", and "Not a Number" (the result of maths on something that isn't a number).</td><td>You rarely type these yourself, but they show up in bugs, and each one tells you where to look. <code>undefined</code> usually means a misspelled or missing field; <code>NaN</code> means a calculation got a non-number. The Chapter 2 bug lab is a NaN hunt.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 3 · Group related values</h4>
+  <p>Real data comes in bundles: a list of products, a user with several details. Almost all data from a server (JSON) is made of these two shapes.</p>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>[1, 2, 3]</code></td><td>An array: an ordered list. The square brackets create it. <code>list[0]</code> is the first item, <code>list.length</code> is how many there are.</td><td>Whenever there's a list on screen: cart items, search results, chat messages, table rows. Store it with <code>const</code> or <code>let</code> like any other value. The brackets make it an array, not the keyword.</td></tr>
+        <tr><td><code>{ name: "Mug", price: 8 }</code></td><td>An object: one thing with named parts, written as <code>key: value</code> pairs.</td><td>Whenever one thing has several facts: a product (name, price, stock), a user (name, email), settings. The cart above is an array of objects, the most common shape you'll meet.</td></tr>
+        <tr><td><code>item.price</code> <code>rates[country]</code></td><td>Reads one part of an object. Brackets let the key come from a variable.</td><td>Getting a fact out: <code>user.email</code> to send a message, <code>item.price</code> to add up a total. Use brackets when you don't know the key in advance, like a country the user picked from a dropdown.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 4 · Make decisions</h4>
+  <p>Programs react to circumstances: show an error or a success message, free shipping or not.</p>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>if (cond) { … } else { … }</code></td><td>Runs the first block when the condition is true, otherwise the second.</td><td>Every "it depends" in an app: logged in or not, form valid or not, enough stock or not. In the cart program it picks which message to show.</td></tr>
+        <tr><td><code>===</code> <code>!==</code></td><td>"Is the same as" and "is not the same as". Each answers <code>true</code> or <code>false</code>.</td><td>Checking a value: <code>status === "paid"</code>, <code>password !== ""</code>. Always use three characters. The two-character <code>==</code> converts types first (<code>0 == ""</code> is true), which causes bugs.</td></tr>
+        <tr><td><code>&lt;</code> <code>&gt;=</code> <code>!</code> <code>&amp;&amp;</code> <code>||</code></td><td>Less than, greater than or equal, not, and, or.</td><td>Thresholds (<code>total &gt;= 50</code> for free shipping), combining conditions (<code>isLoggedIn &amp;&amp; cart.length &gt; 0</code> before checkout), flipping one (<code>!isLoading</code>).</td></tr>
+        <tr><td><code>a ?? b</code></td><td>Uses <code>a</code>, unless it's missing (<code>null</code> or <code>undefined</code>); then uses <code>b</code>.</td><td>Defaults for missing data: <code>user.nickname ?? user.name</code>, <code>settings.fontSize ?? 16</code>. Data from servers and forms is often incomplete.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 5 · Repeat work</h4>
+  <p>Anything you do to one item, you'll usually need to do to every item.</p>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>for (const item of cart) { … }</code></td><td>Runs the block once per item, with <code>item</code> pointing at the current one.</td><td>Adding up a total, checking every form field, building one row of HTML per product. Chapter 6 covers <code>map</code> and <code>filter</code>, which are shorter ways to do common loops.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 6 · Package steps into functions</h4>
+  <p>A function gives a set of steps a name, so you can reuse it and test it on its own.</p>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>function lineTotal(item) { … }</code></td><td>Defines a function named <code>lineTotal</code> with one input (a parameter) called <code>item</code>. The code inside runs only when it's called: <code>lineTotal(cart[0])</code>.</td><td>Any step you need in more than one place, or want to test alone: <code>formatPrice(4.5)</code> giving "€4.50" everywhere, <code>isValidEmail(text)</code> on every form. When there's a bug, you can run one function with one input and see what it does.</td></tr>
+        <tr><td><code>return price * qty;</code></td><td>Ends the function and hands the answer back to whoever called it.</td><td>How a function gives you its result. Forgetting <code>return</code> is a classic beginner bug: the function runs but hands back <code>undefined</code>.</td></tr>
+        <tr><td><code>item =&gt; item.qty &gt; 0</code></td><td>An arrow function: a short function without a name. "Given <code>item</code>, give back whether its qty is above 0."</td><td>Mostly used when you hand a small function to another one: <code>cart.filter(item =&gt; item.qty &gt; 0)</code>, or <code>button.addEventListener("click", () =&gt; buy())</code> to say what happens on a click.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Job 7 · Use built-in tools and see results</h4>
+  <div class="table-wrap">
+    <table class="primer">
+      <thead><tr><th>You see</th><th>What it does</th><th>Why and where you'd use it</th></tr></thead>
+      <tbody>
+        <tr><td><code>new Map()</code> <code>new Set()</code></td><td><code>new</code> builds a fresh object of a built-in type.</td><td>A Map for looking things up by ID, a Set for keeping a list without duplicates. Chapter 3 explains when to choose each.</td></tr>
+        <tr><td><code>[...cart, newItem]</code></td><td>Spread: copies all the items of <code>cart</code> into a new array, here with one more item at the end.</td><td>Making a changed copy instead of editing the original. You'll use it constantly in React (<code>setCart([...cart, newItem])</code>) and for merging settings (<code>{ ...defaults, ...userChoices }</code>).</td></tr>
+        <tr><td><code>console.log(total)</code></td><td>Prints a value. In this course it appears under the code; on a real site, press F12 and open the Console tab.</td><td>Your main debugging tool: it shows what the machine actually holds, so you can compare it with what you expected.</td></tr>
+        <tr><td><code>// why this exists</code></td><td>A comment. The computer ignores everything after <code>//</code> on that line.</td><td>Explaining <em>why</em> code does something that isn't obvious, for the next reader (often you, three months later).</td></tr>
       </tbody>
     </table>
   </div>
@@ -916,6 +987,32 @@ function fmt(v, depth = 0, top = true) {
 
 /* ---------- examples: real functions, shown as their own source ---------- */
 const EX = {
+  primer: function (console) {
+    // A shop page shows the cart total and whether shipping is free.
+    const FREE_SHIPPING_FROM = 50;  // a setting that never changes
+
+    const cart = [                  // the items the customer picked
+      { name: "Notebook", price: 4.5, qty: 2 },
+      { name: "Mug", price: 8, qty: 1 },
+      { name: "Backpack", price: 39, qty: 1 },
+    ];
+
+    function lineTotal(item) {      // a reusable step: price × quantity
+      return item.price * item.qty;
+    }
+
+    let total = 0;                  // a running total that will change
+    for (const item of cart) {      // repeat for every item
+      total += lineTotal(item);
+    }
+
+    const missing = FREE_SHIPPING_FROM - total;
+    if (missing <= 0) {             // decide which message to show
+      console.log("Total: €" + total + ". Shipping is free!");
+    } else {
+      console.log("Total: €" + total + ". Add €" + missing + " more for free shipping.");
+    }
+  },
   primitive: function (console) {
     let a = 5;
     let b = a;
@@ -1152,6 +1249,16 @@ function runCode(original, code, out) {
 
 /* ---------- syntax notes: [code, explanation]; `backticks` render as code ---------- */
 const NOTES = {
+  primer: [
+    ["const FREE_SHIPPING_FROM = 50;", "Job 1, remember. A shop setting that never changes while the page runs, so `const`. Capital letters are a common way to mark fixed settings."],
+    ["const cart = [ { … }, { … } ];", "Job 3, group. A list on screen means an array; each product has several facts, so each item is an object. On a real site this would come from the server."],
+    ["function lineTotal(item) { return … }", "Job 6, package. \"Price times quantity\" gets a name, so it's written once and can be tested on its own. `return` hands the answer back."],
+    ["let total = 0;", "Job 1 again, but `let`: the total starts at 0 and has to change as items are added."],
+    ["for (const item of cart) { total += lineTotal(item); }", "Job 5, repeat. Do the same step for every item in the cart, adding each line's total to the running total."],
+    ["if (missing <= 0) { … } else { … }", "Job 4, decide. `<=` means \"less than or equal\". The customer sees one message or the other, never both."],
+    ['"Total: €" + total', "`+` between a string and a number joins them into text for the message."],
+    ["console.log(…)", "Job 7, show. Here it stands in for putting the message on the page."],
+  ],
   refs: [
     ["let price = 10;", "`let` creates a variable named `price` and points it at 10. It can be re-pointed later, as line 3 does."],
     ["price = 12;", "No `let`: the variable already exists, so this re-points it. Read `=` as \"becomes\"."],
