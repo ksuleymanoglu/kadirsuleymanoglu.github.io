@@ -508,11 +508,31 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   </div>
 
   <h3>Rule 1: a name points at a value</h3>
-  <p>A variable is a name. It points at a value. Assignment (<code>=</code>) makes the name point somewhere new. It is not an equation, and it does not link two names forever. Numbers, strings and booleans are small and get copied. Arrays and objects live in a separate area (the <em>heap</em>), and the name holds an arrow to them.</p>
-  <p>Step through this program and watch the two columns. Before each click, say out loud what you expect to change.</p>
+  <p>A variable is a label you stick on a value so you can find it again. Assignment (<code>=</code>) moves the label onto a value. It isn't an equation, and it doesn't tie two labels together for good: <code>b = a</code> means "put label b on whatever a is on <em>right now</em>".</p>
+  <p>What happens after that depends on which of two kinds of value the label is on:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Plain values</th><th>Containers</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Which ones</strong></td><td>Numbers, strings (text), booleans, <code>undefined</code>, <code>null</code></td><td>Arrays <code>[ ]</code> and objects <code>{ }</code></td></tr>
+        <tr><td><strong>Can the value itself change?</strong></td><td>No. Nothing can turn the 5 itself into a 6. <code>x = x + 1</code> works out a new value, 6, and moves the label onto it. String operations work the same way: <code>name.toUpperCase()</code> gives you a new string and leaves the old one as it was.</td><td>Yes. <code>list.push(3)</code> adds to that same array. <code>user.name = "Grace"</code> edits that same object.</td></tr>
+        <tr><td><strong>What <code>b = a</code> gives you</strong></td><td>In practice, a separate copy. Because nothing can change the value, it makes no difference whether a and b share it.</td><td>Two labels on <em>one</em> container. A change made through either name shows up through both.</td></tr>
+        <tr><td><strong>Everyday comparison</strong></td><td>A price written on a sticky note. Copy it onto a second note and the two are independent.</td><td>A shared Google Doc. <code>b = a</code> sends someone the link, not a copy of the file. If they edit it, you see the edit.</td></tr>
+        <tr><td><strong>To get an independent copy</strong></td><td>Nothing to do.</td><td><code>[...list]</code> or <code>{ ...obj }</code>, or <code>structuredClone(obj)</code> when there are containers inside the container.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Why it works this way.</strong> Containers can be big (a cart, a list of 10,000 products) and get handed around constantly: into functions, between parts of a page. Copying the whole thing at every step would be slow, and usually you want every part of the program to see the same cart. So JavaScript hands over the link and leaves copying to you. Python, Java, C# and most other languages behave the same way.</p>
+  <p><strong>Why you need to know it.</strong> Three bugs that come straight from this rule:</p>
+  <ul>
+    <li>You write <code>applyDiscount(cart)</code>, which lowers each item's price, to show a preview. The real cart on the page changes too, because the function received a link to the cart, not a copy of it.</li>
+    <li>In React, <code>cart.push(item); setCart(cart);</code> doesn't update the screen. React checks whether it got a different container, and it's the same one. <code>setCart([...cart, item])</code> makes a new container, so the screen updates.</li>
+    <li>You write <code>const mySettings = defaultSettings;</code> and change <code>mySettings.theme</code>. Now the defaults have changed for everyone who uses them.</li>
+  </ul>
+  <p>The stepper below shows this happening line by line. The left column lists each name and what it's on. Containers appear in the right column with a number such as #1, and a name that holds the link to one shows <span class="ref">→ #1</span>. (Programmers call that right-hand area "the heap". You don't need the word, but you'll see it in documentation. It's unrelated to the "heap" data structure in Chapter 4.) Before each click, say out loud what you expect to change.</p>
 
   <div class="panel stepper" data-stepper="refs">
-    <p class="panel-title"><b>Memory stepper</b> · names and the heap</p>
+    <p class="panel-title"><b>Memory stepper</b> · names and containers</p>
   </div>
 
   <p>Now test the same rules on new code. Write your prediction first.</p>
@@ -521,9 +541,10 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <div class="runner" data-ex="constobj" data-prompt="Does this throw an error, or print something?"></div>
 
   <h3>Rule 2: each function call gets a fresh set of names</h3>
-  <p>When a function is called, the machine opens a new <em>frame</em>: a private box of names for that call. Parameters get the values that were passed in. When the function returns, the frame is thrown away. This is why a variable from inside a function "doesn't exist" outside it.</p>
+  <p>When a function is called, that call gets its own private set of names. Programmers call it a <em>frame</em>. The function's inputs (its parameters) are set to the values you passed in, and any variable created inside the function lives only in that private set. When the function returns, the set is thrown away.</p>
+  <p><strong>Why you need to know it.</strong> It's what lets you reuse names safely: two functions can each have a variable called <code>total</code> without interfering. It explains a common error message: use a variable outside the function that created it and you get <code>ReferenceError: tax is not defined</code>. It also explains the <code>applyDiscount</code> bug above. The parameter is a new name, but it holds a link to the same container you passed in.</p>
   <div class="panel stepper" data-stepper="frames">
-    <p class="panel-title"><b>Memory stepper</b> · call frames</p>
+    <p class="panel-title"><b>Memory stepper</b> · a function call</p>
   </div>
 
   <h3>Beliefs that break programs</h3>
@@ -532,7 +553,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     <table>
       <thead><tr><th>Wrong belief</th><th>What the machine actually does</th></tr></thead>
       <tbody>
-        <tr><td><code>b = a</code> links b and a forever</td><td>For numbers and strings, b gets a copy at that moment. For arrays and objects, both names share one thing until one of them is reassigned.</td></tr>
+        <tr><td><code>b = a</code> links b and a forever</td><td>For plain values, b effectively gets its own copy at that moment. For containers, both names point at the same one until one of them is pointed somewhere else.</td></tr>
         <tr><td><code>const</code> makes an object unchangeable</td><td><code>const</code> stops the <em>name</em> from pointing elsewhere. The object itself can still change.</td></tr>
         <tr><td><code>{...obj}</code> makes a full copy</td><td>The spread copies one level. Nested arrays and objects are still shared. Use <code>structuredClone(obj)</code> for a deep copy.</td></tr>
         <tr><td>Code runs in the order it's written</td><td>Inside one function, yes. Callbacks and anything after an <code>await</code> run later, when the machine gets to them. Chapter 7 is about this.</td></tr>
@@ -544,9 +565,9 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <div class="runner" data-ex="spread" data-prompt="What are original.name and original.tags at the end?"></div>
 
   <div class="note">
-    <p><strong>Habit to build:</strong> when you read code you didn't write, keep a scratch "names and heap" table on paper for the variables that matter. It feels slow for a week, then it becomes automatic. <a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a> draws this diagram for real Python and JavaScript programs, so you can check your table against it.</p>
+    <p><strong>Habit to build:</strong> when you read code you didn't write, keep a scratch "names and containers" table on paper for the variables that matter. It feels slow for a week, then it becomes automatic. <a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a> draws this diagram for real Python and JavaScript programs, so you can check your table against it.</p>
   </div>
-  <label class="done-box"><input type="checkbox" data-done="machine"> I can predict what each line does to the names and the heap</label>
+  <label class="done-box"><input type="checkbox" data-done="machine"> I can predict what each line does to the names and the containers</label>
 </section>
 
 <!-- ============================================================ 2 -->
@@ -621,7 +642,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     <table>
       <thead><tr><th>Tactic</th><th>When to use it</th></tr></thead>
       <tbody>
-        <tr><td>Read the whole error message and stack trace</td><td>Always first. The bottom frame that's in your code is usually where to look.</td></tr>
+        <tr><td>Read the whole error message and stack trace</td><td>Always first. The trace lists the functions that were running when it failed. The first line that names one of your own files is usually where to look.</td></tr>
         <tr><td>Shrink the input</td><td>The bug appears on big data. Cut it in half until it disappears; the last piece you removed holds the cause.</td></tr>
         <tr><td>Diff working against broken</td><td>One case works and one doesn't (like the two carts). The difference between them is a short list of suspects.</td></tr>
         <tr><td>Log the <em>type</em> as well as the value</td><td><code>console.log(typeof x, x)</code>. "8" and 8 look the same in many places.</td></tr>
@@ -775,7 +796,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <div class="runner" data-ex="guards" data-prompt="Which message comes back?"></div>
 
   <h3>Pure functions and side effects</h3>
-  <p>A pure function's result depends only on its arguments, and it changes nothing outside itself. That makes it the easiest code to debug: run it with the failing input and you've reproduced the bug. A function that reads a global or mutates its input has a hidden extra input, which is the whole world. Keep the logic pure and push reading files, network calls and DOM updates to the edges. People call this "functional core, imperative shell."</p>
+  <p>A pure function's result depends only on its arguments, and it changes nothing outside itself. That makes it the easiest code to debug: run it with the failing input and you've reproduced the bug. A function that reads a variable from outside itself, or changes a container it was given, has a hidden extra input, which is the whole world. Keep the logic pure and push reading files, network calls and DOM updates to the edges. People call this "functional core, imperative shell."</p>
   <div class="runner" data-ex="pure" data-prompt="What are the three printed prices?"></div>
 
   <h3>Make impossible states impossible</h3>
@@ -923,7 +944,7 @@ switch (state.status) {
   <ul class="sources">
     <li><a href="https://htdp.org/" target="_blank" rel="noopener"><em>How to Design Programs</em></a> (Felleisen et al.), free online. The design recipe: data definition, examples, template, code, tests. The most direct cure for "I don't know where to start."</li>
     <li><a href="https://www.debuggingbook.org/" target="_blank" rel="noopener"><em>The Debugging Book</em></a> (Zeller et al.), free and interactive, in Python. Scientific debugging and the tools that automate it.</li>
-    <li><a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a>. Draws the names-and-heap diagram for your own code, step by step.</li>
+    <li><a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a>. Draws the names-and-containers diagram for your own code, step by step.</li>
     <li><a href="https://exercism.org/" target="_blank" rel="noopener">Exercism</a>. Free exercises with human mentors who review your solutions.</li>
     <li><a href="https://wizardzines.com/" target="_blank" rel="noopener">Julia Evans' zines</a>, including one on debugging. Short, friendly, practical.</li>
   </ul>
@@ -1438,15 +1459,15 @@ const STEPPERS = {
       'copy.push("plum");',
     ],
     steps: [
-      { line: 0, frames: [["global", []]], heap: [], note: "Nothing has run yet. Press Next to run line 1." },
-      { line: 1, frames: [["global", [["price", "10", 1]]]], heap: [], note: "The name price now points at the number 10." },
-      { line: 2, frames: [["global", [["price", "10"], ["saved", "10", 1]]]], heap: [], note: "saved gets its own copy of 10. Numbers, strings and booleans are copied." },
-      { line: 3, frames: [["global", [["price", "12", 1], ["saved", "10"]]]], heap: [], note: "price points at 12 now. saved is untouched. Assignment is not a permanent link." },
-      { line: 4, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1", 1]]]], heap: [["#1", '["apple"]', 1]], note: "The array is created in the heap as #1. The name cart holds an arrow to it, not the array itself." },
-      { line: 5, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1", 1]]]], heap: [["#1", '["apple"]']], note: "This copies the arrow, not the array. Two names, one array." },
-      { line: 6, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"]]]], heap: [["#1", '["apple", "pear"]', 1]], note: "push changes #1 itself. Both cart and alias see the change, because they point at the same thing. const didn't stop it: const only stops the name from being re-pointed." },
-      { line: 7, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2", 1]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear"]', 1]], note: "The spread [...cart] builds a brand-new array #2 with the same items." },
-      { line: 8, frames: [["global", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2"]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear", "plum"]', 1]], note: "Only #2 changed. cart and alias still point at #1. Prediction check: what would alias.length be now? (2)" },
+      { line: 0, frames: [["main program", []]], heap: [], note: "Nothing has run yet. Press Next to run line 1." },
+      { line: 1, frames: [["main program", [["price", "10", 1]]]], heap: [], note: "The name price now points at the number 10." },
+      { line: 2, frames: [["main program", [["price", "10"], ["saved", "10", 1]]]], heap: [], note: "saved is now on 10 too. A number can never be changed, so this behaves exactly like a separate copy." },
+      { line: 3, frames: [["main program", [["price", "12", 1], ["saved", "10"]]]], heap: [], note: "price moves to 12. saved stays on 10: line 2 copied what price was on at that moment; it didn't link the two names." },
+      { line: 4, frames: [["main program", [["price", "12"], ["saved", "10"], ["cart", "#1", 1]]]], heap: [["#1", '["apple"]', 1]], note: "A container! The array is created as #1 in the right column. The name cart holds a link to it (→ #1), not the array itself." },
+      { line: 5, frames: [["main program", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1", 1]]]], heap: [["#1", '["apple"]']], note: "This copies the link, not the array. Two names, one array, like two people with the same Google Doc link." },
+      { line: 6, frames: [["main program", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"]]]], heap: [["#1", '["apple", "pear"]', 1]], note: "push changes #1 itself. Both cart and alias see the change, because they point at the same thing. const didn't stop it: const only stops the name from being re-pointed." },
+      { line: 7, frames: [["main program", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2", 1]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear"]', 1]], note: "The spread [...cart] builds a brand-new array #2 with the same items." },
+      { line: 8, frames: [["main program", [["price", "12"], ["saved", "10"], ["cart", "#1"], ["alias", "#1"], ["copy", "#2"]]]], heap: [["#1", '["apple", "pear"]'], ["#2", '["apple", "pear", "plum"]', 1]], note: "Only #2 changed. cart and alias still point at #1. Prediction check: what would alias.length be now? (2)" },
     ],
   },
   frames: {
@@ -1460,14 +1481,14 @@ const STEPPERS = {
       'console.log(total);',
     ],
     steps: [
-      { line: 0, frames: [["global", []]], heap: [], note: "Nothing has run yet." },
-      { line: 1, frames: [["global", [["addTax", "ƒ function", 1]]]], heap: [], note: "Lines 1–4 only define the function. Nothing inside it runs yet." },
-      { line: 5, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50", 1]]]], heap: [], note: "subtotal points at 50." },
-      { line: 6, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50", 1], ["rate", "0.2", 1]]]], heap: [], note: "The call opens a new frame with its own names. price gets the value of subtotal (50). The global code waits." },
-      { line: 2, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10", 1]]]], heap: [], note: "tax exists only inside this frame." },
-      { line: 3, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10"]]]], heap: [], note: "return computes 50 + 10 = 60 and hands it back to whoever called." },
-      { line: 6, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60", 1]]]], heap: [], note: "The frame is gone, and tax with it. The global code resumes and total points at 60." },
-      { line: 7, frames: [["global", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60"]]]], heap: [], out: "60", note: "Prints 60. Predict: what would console.log(tax) print here? (ReferenceError: tax is not defined)" },
+      { line: 0, frames: [["main program", []]], heap: [], note: "Nothing has run yet." },
+      { line: 1, frames: [["main program", [["addTax", "ƒ function", 1]]]], heap: [], note: "Lines 1–4 only define the function. Nothing inside it runs yet." },
+      { line: 5, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50", 1]]]], heap: [], note: "subtotal points at 50." },
+      { line: 6, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50", 1], ["rate", "0.2", 1]]]], heap: [], note: "The call gets its own private set of names. price gets the value of subtotal (50). The main program waits here until the call finishes." },
+      { line: 2, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10", 1]]]], heap: [], note: "tax exists only inside this call's private names. The main program can't see it." },
+      { line: 3, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "(waiting)"]]], ["addTax call", [["price", "50"], ["rate", "0.2"], ["tax", "10"]]]], heap: [], note: "return computes 50 + 10 = 60 and hands it back to whoever called." },
+      { line: 6, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60", 1]]]], heap: [], note: "The call's private names are thrown away, tax included. The main program carries on and total points at 60." },
+      { line: 7, frames: [["main program", [["addTax", "ƒ function"], ["subtotal", "50"], ["total", "60"]]]], heap: [], out: "60", note: "Prints 60. Predict: what would console.log(tax) print here? (ReferenceError: tax is not defined)" },
     ],
   },
 };
@@ -1487,13 +1508,13 @@ function buildStepper(panel) {
     i = Math.max(0, Math.min(def.steps.length - 1, n));
     const s = def.steps[i];
     $$("div", codeBox).forEach((d, k) => d.classList.toggle("on", k === s.line - 1));
-    names.replaceChildren(h("h4", {}, "Names (frames)"), ...s.frames.map(([fname, vars]) =>
+    names.replaceChildren(h("h4", {}, "Names"), ...s.frames.map(([fname, vars]) =>
       h("div", { class: "frame" }, h("div", { class: "fname" }, fname),
         vars.length ? vars.map(([k, v, ch]) => h("div", { class: "cell" + (ch ? " changed" : "") }, h("span", { class: "k" }, k), h("span", {}, value(v))))
           : h("div", { class: "cell" }, h("span", { class: "k" }, "(empty)"), h("span")))));
-    heap.replaceChildren(h("h4", {}, "Heap (arrays and objects)"), s.heap.length
+    heap.replaceChildren(h("h4", {}, "Containers (arrays and objects)"), s.heap.length
       ? h("div", { class: "frame" }, s.heap.map(([k, v, ch]) => h("div", { class: "cell" + (ch ? " changed" : "") }, h("span", { class: "k" }, k), h("span", {}, v))))
-      : h("div", { class: "empty" }, "Nothing in the heap yet."));
+      : h("div", { class: "empty" }, "No containers yet."));
     note.textContent = s.note;
     outLine.textContent = s.out ? "Console: " + s.out : "";
     count.textContent = "step " + i + " of " + (def.steps.length - 1);
@@ -1953,7 +1974,7 @@ interReset();
 
 /* ---------- practice plan ---------- */
 const PLAN = [
-  "Week 1: Redo Chapter 1 with your own code. Draw the names-and-heap table by hand for three functions you wrote last month.",
+  "Week 1: Redo Chapter 1 with your own code. Draw the names-and-containers table by hand for three functions you wrote last month.",
   "Week 1: For every snippet you run this week, write the prediction first. Count your surprises.",
   "Week 2: Read the first part of How to Design Programs and follow the design recipe on five small functions, writing the data definition first.",
   "Week 2: Solve five easy Exercism exercises. Before submitting, write the edge-case list from Chapter 6 and test each one.",
