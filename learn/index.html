@@ -70,6 +70,17 @@ body {
 a { color: var(--accent); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 code, kbd, pre, textarea.code { font-family: var(--f-mono); font-size: 0.92em; }
+/* Show code exactly as typed: no merged symbols like === drawn as one glyph. */
+code, kbd, pre, textarea, .code-lines, .parsons, .chip, .out-line, .output { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+.syntax { border-top: 1px solid var(--rule); padding: 0.6rem 1rem 0.8rem; background: var(--sheet); }
+.syntax summary { cursor: pointer; font: 600 var(--s-xs)/1.4 var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+.syntax dl { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 0.5rem 1.2rem; margin: 0.75rem 0 0; font-size: var(--s-sm); }
+.syntax dt { min-width: 0; }
+.syntax dt code { white-space: pre-wrap; word-break: break-word; display: inline-block; max-width: 24rem; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0.1rem 0.4rem; }
+.syntax dd { margin: 0; }
+.syntax dd code { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0 0.3em; }
+@media (max-width: 640px) { .syntax dl { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; } .syntax dd { margin-bottom: 0.6rem; } }
+.panel .syntax, pre.static + .syntax { border: 1px solid var(--rule); border-radius: var(--radius); margin-top: 0.75rem; }
 p code, li code, td code { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0 0.3em; }
 mark { background: var(--mark); color: var(--mark-ink); padding: 0 0.2em; border-radius: 2px; }
 
@@ -384,6 +395,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     <li><strong>Then modify.</strong> All code boxes are editable. Change one thing, predict again, run again.</li>
     <li><strong>Mark chapters done</strong> at the bottom of each one. Progress is saved in this browser only.</li>
     <li>Examples are in JavaScript, because it runs right here in the page. Every idea carries over to Python, Java, C# and the rest; Chapter 3 gives the Python names too.</li>
+    <li><strong>New to JavaScript syntax?</strong> Chapter 1 starts with a one-table guide, and every code box has a <strong>Syntax in this example</strong> panel explaining its own lines.</li>
   </ul>
   <p class="small">This page is a single file that works offline. Nothing you type leaves your computer.</p>
 </section>
@@ -393,6 +405,36 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <p class="eyebrow">Chapter 1</p>
   <h2>The machine in your head</h2>
   <p>You can't imagine a world where "this variable is null" unless you know how a variable gets its value in the first place. Debugging is a comparison: what you think the machine did versus what it did. If your picture of the machine is vague, there is nothing to compare against. So we start by making the picture exact.</p>
+
+  <h3>Reading JavaScript: the syntax this course uses</h3>
+  <p>You don't need to memorise this. Every code box below has a <strong>Syntax in this example</strong> panel that explains its own lines. Come back here when a symbol looks unfamiliar.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>You see</th><th>It means</th></tr></thead>
+      <tbody>
+        <tr><td><code>let x = 5;</code></td><td>Create a variable named <code>x</code> pointing at 5. A <code>let</code> variable can be pointed at something else later. The <code>;</code> ends the statement.</td></tr>
+        <tr><td><code>const x = 5;</code></td><td>Create a variable that can't be pointed elsewhere later. Short for "constant". Use it by default, and <code>let</code> only when you need to reassign.</td></tr>
+        <tr><td><code>x = x + 1;</code></td><td>Reassign an existing variable. Read <code>=</code> as "becomes", not "equals".</td></tr>
+        <tr><td><code>x += 2;</code> <code>x++</code></td><td>Shortcuts for <code>x = x + 2</code> and <code>x = x + 1</code>.</td></tr>
+        <tr><td><code>5</code> <code>4.5</code> <code>"Ada"</code> <code>true</code></td><td>Values: a number, a number with decimals, a string (text, in quotes), a boolean (<code>true</code> or <code>false</code>).</td></tr>
+        <tr><td><code>undefined</code> <code>null</code> <code>NaN</code></td><td>"No value here", "deliberately empty", and "Not a Number": the result of maths that went wrong, like <code>8 * undefined</code>.</td></tr>
+        <tr><td><code>[1, 2, 3]</code></td><td>An array: an ordered list. The square brackets create it, whether you store it with <code>const</code>, <code>let</code> or not at all. <code>list[0]</code> is the first item; <code>list.length</code> is how many there are.</td></tr>
+        <tr><td><code>{ name: "Ada", age: 36 }</code></td><td>An object: one thing with named parts (key: value pairs). <code>user.name</code> reads a part; <code>user["name"]</code> does the same with the key in a string or variable.</td></tr>
+        <tr><td><code>a.b</code> <code>a.b()</code></td><td>The dot reaches inside a value. With parentheses after it, it calls a function that belongs to that value, like <code>list.push(4)</code>.</td></tr>
+        <tr><td><code>function add(a, b) { return a + b; }</code></td><td>Defines a function named <code>add</code> with two inputs (parameters). The code in <code>{ }</code> runs only when it's called: <code>add(2, 3)</code>. <code>return</code> ends it and hands back a value.</td></tr>
+        <tr><td><code>x =&gt; x * 2</code></td><td>An arrow function: a short unnamed function. "Given <code>x</code>, give back <code>x * 2</code>."</td></tr>
+        <tr><td><code>===</code> <code>!==</code></td><td>"Is the same as" and "is not the same as". Each gives <code>true</code> or <code>false</code>. Three characters: one <code>=</code> assigns, and <code>==</code> is an older, looser comparison to avoid.</td></tr>
+        <tr><td><code>&lt;</code> <code>&gt;=</code> <code>!</code> <code>&amp;&amp;</code> <code>||</code></td><td>Less than, greater or equal, not, and, or.</td></tr>
+        <tr><td><code>a ?? b</code></td><td>Use <code>a</code>, unless it's <code>null</code> or <code>undefined</code>; then use <code>b</code>.</td></tr>
+        <tr><td><code>if (cond) { … } else { … }</code></td><td>Run the first block when the condition is true, otherwise the second.</td></tr>
+        <tr><td><code>for (const item of list) { … }</code></td><td>Run the block once for each item in the list, with <code>item</code> pointing at the current one.</td></tr>
+        <tr><td><code>new Map()</code> <code>new Set()</code></td><td><code>new</code> builds a fresh object of a built-in type. Chapter 3 explains Map and Set.</td></tr>
+        <tr><td><code>...list</code></td><td>Spread: copies all the items (or key–value pairs) into the array or object being built, as in <code>[...list]</code>.</td></tr>
+        <tr><td><code>console.log(x)</code></td><td>Prints <code>x</code> in the output area. In a real browser it prints to the developer console (F12).</td></tr>
+        <tr><td><code>// note</code> <code>/* note */</code></td><td>Comments. The computer ignores them.</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <h3>Rule 1: a name points at a value</h3>
   <p>A variable is a name. It points at a value. Assignment (<code>=</code>) makes the name point somewhere new. It is not an equation, and it does not link two names forever. Numbers, strings and booleans are small and get copied. Arrays and objects live in a separate area (the <em>heap</em>), and the name holds an arrow to them.</p>
@@ -456,7 +498,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <div class="panel">
     <p class="panel-title"><b>Bug report</b></p>
     <p>"My checkout total says <code>NaN</code>." Another customer's cart works fine. Here is the function and the two carts.</p>
-    <pre class="static" id="lab-code"></pre>
+    <pre class="static" id="lab-code" data-notes="lab"></pre>
   </div>
   <div class="lab">
     <div class="panel">
@@ -595,7 +637,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <h3>Build it: count words</h3>
   <p>A Parsons problem. The lines of a working function are scrambled. Put them in order with the arrows, then check. Indentation is a clue.</p>
   <div class="panel">
-    <ul class="parsons" id="parsons"></ul>
+    <ul class="parsons" id="parsons" data-notes="wordcount"></ul>
     <div class="row">
       <button type="button" id="parsons-check">Check order</button>
       <button type="button" class="quiet" id="parsons-shuffle">Shuffle again</button>
@@ -688,7 +730,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     </div>
   </div>
   <p>Replace the flags with one <code>status</code> field that can only hold the states that exist. Data that belongs to a state lives inside it, so you can't have an error message without an error.</p>
-  <pre class="static">// 4 states, all of them valid
+  <pre class="static" data-notes="statemachine">// 4 states, all of them valid
 { status: "idle" }
 { status: "loading" }
 { status: "error",   message: "Network down" }
@@ -1107,6 +1149,140 @@ function runCode(original, code, out) {
   setTimeout(() => window.removeEventListener("unhandledrejection", onRej), 2000);
 }
 
+
+/* ---------- syntax notes: [code, explanation]; `backticks` render as code ---------- */
+const NOTES = {
+  refs: [
+    ["let price = 10;", "`let` creates a variable named `price` and points it at 10. It can be re-pointed later, as line 3 does."],
+    ["price = 12;", "No `let`: the variable already exists, so this re-points it. Read `=` as \"becomes\"."],
+    ['const cart = ["apple"];', "The `[ ]` create an array (a list) with one string in it. `const` names it; the name can't be re-pointed, but the array can still change."],
+    ['cart.push("pear");', "The dot reaches into the array; `push` is a function every array has. It adds an item to the end."],
+    ["[...cart]", "The three dots (spread) copy every item of `cart` into a brand-new array."],
+  ],
+  frames: [
+    ["function addTax(price, rate) { … }", "Defines a function named `addTax` with two inputs (parameters), `price` and `rate`. Nothing inside runs until it's called."],
+    ["price * rate", "`*` multiplies. (`+` adds, `-` subtracts, `/` divides.)"],
+    ["return price + tax;", "Ends the function and hands the value back to the place that called it."],
+    ["addTax(subtotal, 0.2)", "Calls the function. The values in the parentheses become `price` and `rate` for this call."],
+    ["console.log(total);", "Prints the value of `total`."],
+  ],
+  primitive: [
+    ["let a = 5;", "`let` creates a new variable named `a` and points it at the number 5. The `;` ends the statement."],
+    ["b = b + 1;", "No `let`, because `b` already exists: this re-points it. Read it as \"b becomes b plus 1\", not as an equation."],
+    ["console.log(a);", "Prints a value. `console` is a built-in object, `.log` is a function on it, and the parentheses call it with `a` as the input."],
+  ],
+  alias: [
+    ["const a = [1, 2];", "`[ ]` with commas inside creates an array. `const` creates a name that can't be re-pointed later. Arrays can be stored with `let` or `const`; `const` is the usual choice."],
+    ["b.push(3);", "The dot reaches into the value `b` points at. `push` adds an item to the end of that array."],
+    ["a === b", "Three equals signs ask \"are these the same?\" and give `true` or `false`. For arrays and objects it means \"the very same one\", not \"looks alike\"."],
+  ],
+  constobj: [
+    ['const user = { name: "Ada" };', "Curly braces with `key: value` pairs create an object. Text in quotes is a string."],
+    ['user.name = "Grace";', "Dot plus a key reads or changes one part of the object. This is allowed even with `const`, because the name `user` still points at the same object."],
+    ["// Try adding this line", "Everything after `//` on a line is a comment. Delete the `//` in front of `user = …` to make it real code, then run."],
+  ],
+  spread: [
+    ['{ name: "Ada", tags: ["math"] }', "An object whose `tags` part is an array. Values can nest inside each other."],
+    ["{ ...original }", "Spread copies each key–value pair of `original` into a new object. Only one level deep: `tags` in the copy points at the same array."],
+    ['copy.tags.push("engines");', "Read left to right: take `copy`, get its `tags` array, call `push` on that array."],
+  ],
+  tuplekey: [
+    ["new Map()", "`new` builds a fresh object of a built-in type. A Map stores key → value pairs."],
+    ["visited.set([2, 3], true);", "`set(key, value)` stores a pair. Here the key is a new array `[2, 3]` and the value is the boolean `true`."],
+    ["visited.get([2, 3])", "`get(key)` looks up a key. A second `[2, 3]` is a different array, so nothing is found and you get `undefined` (\"no value here\")."],
+    ['"2,3"', "A string. Two strings with the same characters count as the same key."],
+  ],
+  objvsmap: [
+    ["const asObject = {};", "`{}` is an empty object."],
+    ['asObject[1] = "the number one";', "Square brackets set a key from a value instead of a fixed name. Object keys are always turned into strings, so `1` becomes `\"1\"`."],
+    ["Object.keys(asObject).length", "`Object.keys` gives an array of the object's keys; `.length` counts the items in an array."],
+    ["console.log(x, y)", "`log` can take several values separated by commas and prints them on one line."],
+    ["asMap.size", "How many entries the Map has. Arrays use `.length`; Maps and Sets use `.size`."],
+  ],
+  groupby: [
+    ['{ name: "Ayşe", city: "Izmir" },', "An array of objects, one object per person. A trailing comma after the last item is allowed."],
+    ["for (const person of people) { … }", "Runs the block once per item in `people`, with `person` pointing at the current one."],
+    ["if (!byCity.has(person.city)) …", "`if (condition)` runs the next statement only when the condition is true. `!` means \"not\". `has(key)` asks whether the Map contains that key."],
+    ["byCity.set(person.city, [])", "Stores an empty array under this city the first time we see it."],
+    ["byCity.get(person.city).push(person.name)", "Gets the city's array, then adds the name to it. Calls chain left to right."],
+  ],
+  mfr: [
+    ["o => o.paid", "An arrow function: a small unnamed function. \"Given `o`, give back `o.paid`.\""],
+    [".filter(…).map(…)", "`filter` keeps the items where the function returns `true`. `map` builds a new array from what the function returns for each item. Chained, they run in order."],
+    [".reduce((sum, t) => sum + t, 0)", "Walks the array carrying a running value that starts at `0`. Each step returns the new running value."],
+    [".find(o => o.total > 50)", "Returns the first item where the function is `true`, or `undefined` if none matches. `>` means \"greater than\"."],
+  ],
+  lookup: [
+    ["{ DE: 4.99, FR: 5.99, TR: 12.5 }", "An object used as a table: country code → price."],
+    ["function shipping(country) { … }", "Defines a function with one input, `country`. It runs when called, as in `shipping(\"TR\")`."],
+    ["shippingRates[country]", "Looks up the key stored in the variable `country`. (`shippingRates.country` would look for a key literally named \"country\".)"],
+    ["if (rate === undefined) throw new Error(…);", "If the lookup found nothing, `throw` stops the function and reports an error. Lines after it don't run."],
+    ['"No shipping rate for " + country', "`+` with a string joins text together."],
+  ],
+  guards: [
+    ['if (!user) return "Please sign in";', "`!user` is true when `user` is missing (`undefined` or `null`). An `if` controlling a single statement can skip the curly braces."],
+    ["cart.length === 0", "True when the array has no items."],
+    ["checkoutProblem([], { address: \"Izmir\" })", "Calls the function with an empty array and an object."],
+  ],
+  pure: [
+    ["let discount = 0.1;", "A variable outside the functions. Any function can read it."],
+    ["discount = 0.5;", "Re-points that outer variable. From now on every function that reads `discount` sees 0.5."],
+    ["function pricePure(price, discount)", "Here `discount` is a parameter: a separate local name that hides the outer one inside this function."],
+  ],
+  assert: [
+    ["function assert(condition, message) { … }", "A small helper we write ourselves. It throws an error when `condition` is false."],
+    ['typeof item.price === "number"', "`typeof` gives a value's type as a string: \"number\", \"string\", \"undefined\", \"object\" and so on."],
+    ["Number.isInteger(item.qty)", "A built-in check: is this a whole number? `undefined` is not."],
+  ],
+  boundary: [
+    ["const qty = r.qty ?? r.quantity;", "`??` means \"use the left side unless it's `null` or `undefined`, otherwise the right side\"."],
+    ["Number(r.price)", "Converts to a number: `Number(\"4.50\")` is `4.5`. `String(x)` converts to text."],
+    ["{ name: …, price: …, qty }", "Writing just `qty` is shorthand for `qty: qty`."],
+    ["raw.map(parseItem)", "You can hand `map` a named function instead of writing an arrow function."],
+  ],
+  tree: [
+    ["replies: [ { … }, { … } ]", "Objects and arrays nest inside each other to any depth."],
+    ["let count = 1; // this comment", "Code first, then a comment after `//` on the same line."],
+    ["count += countComments(reply);", "`+=` adds to the current value. The function calls itself for each reply: that's recursion."],
+  ],
+  stale: [
+    ["new Promise(done => setTimeout(() => done(…), ms))", "A Promise is a value that arrives later. `setTimeout(fn, ms)` runs `fn` after `ms` milliseconds. Together they fake a slow network request."],
+    ["async function onType(query, ms)", "`async` marks a function that can pause and wait. Calling it starts it; it finishes later."],
+    ["await fakeSearch(query, ms)", "`await` pauses this function until the Promise has its value. Other code keeps running in the meantime."],
+    ['onType("ca", 300);', "Starts a search without waiting for it. The next line starts a second one, so both are in flight at once."],
+  ],
+  stalefix: [
+    ["let latest = 0;", "A counter shared by all calls."],
+    ["const id = ++latest;", "`++latest` adds 1 and gives back the new value. Each search gets its own number; the newest has the highest."],
+    ["if (id !== latest) { … return; }", "`!==` means \"is not the same as\". A `return` with no value just leaves the function."],
+  ],
+  wordcount: [
+    ["text.toLowerCase().split(/\\s+/)", "Make the text lower-case, then cut it into an array of words wherever there's whitespace. `/\\s+/` is a regular expression meaning \"one or more spaces, tabs or line breaks\"."],
+    ['if (word === "") continue;', "`continue` skips the rest of this loop pass and moves to the next word."],
+    ["(counts.get(word) ?? 0) + 1", "The word's current count, or 0 if it's new, plus one."],
+  ],
+  lab: [
+    ["for (const item of items) { … }", "Runs the block once per item in the cart."],
+    ["total += item.price * item.qty;", "Multiplies price by quantity and adds it to the running total."],
+    ["if (coupon) { … }", "Runs only when a coupon was passed in. `null` or `undefined` count as false."],
+    ["total -= total * (coupon.percent / 100);", "`-=` subtracts from the current value: 10 percent of the total here."],
+    ["Math.round(total * 100) / 100", "Rounds to two decimals: 12.6049 → 1260.49 → 1260 → 12.6."],
+  ],
+  statemachine: [
+    ['{ status: "error", message: "Network down" }', "Each state is an object. The `status` key says which state; extra keys hold the data only that state has."],
+    ["/* … */", "A comment that can span several lines."],
+    ["switch (state.status) { case \"idle\": … }", "Compares `state.status` against each `case` and runs the matching one. Each `return` leaves the function, so only one case runs."],
+  ],
+};
+function syntaxNotes(id) {
+  const list = NOTES[id];
+  if (!list) return null;
+  const rich = text => text.split("`").map((part, i) => i % 2 ? h("code", {}, part) : part);
+  return h("details", { class: "syntax", open: true },
+    h("summary", {}, "Syntax in this example"),
+    h("dl", {}, list.flatMap(([code, text]) => [h("dt", {}, h("code", {}, code)), h("dd", {}, rich(text))])));
+}
+
 function buildRunner(box) {
   const id = box.dataset.ex;
   const fn = EX[id];
@@ -1133,6 +1309,7 @@ function buildRunner(box) {
   box.append(
     h("div", { class: "runner-head" }, h("span", {}, "JavaScript · editable · Ctrl+Enter runs"), edited),
     ta,
+    syntaxNotes(id),
     h("div", { class: "predict" }, h("label", { for: pin.id }, h("span", { class: "tag" }, "PREDICT"), box.dataset.prompt || "What will this print?"), pin),
     h("div", { class: "row" }, run, reset),
     out
@@ -1215,10 +1392,11 @@ function buildStepper(panel) {
     count.textContent = "step " + i + " of " + (def.steps.length - 1);
     prev.disabled = i === 0; next.disabled = i === def.steps.length - 1;
   }
-  panel.append(codeBox, h("div", { class: "memory" }, names, heap), outLine, note, h("div", { class: "row" }, prev, next, restart, count));
+  panel.append(codeBox, syntaxNotes(panel.dataset.stepper), h("div", { class: "memory" }, names, heap), outLine, note, h("div", { class: "row" }, prev, next, restart, count));
   go(0);
 }
 $$("[data-stepper]").forEach(buildStepper);
+$$("[data-notes]").forEach(el => { const n = syntaxNotes(el.dataset.notes); if (n) el.after(n); });
 
 /* ---------- bug lab ---------- */
 function cartTotal(items, coupon) {
