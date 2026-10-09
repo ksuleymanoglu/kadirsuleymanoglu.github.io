@@ -253,7 +253,7 @@ select { font: var(--s-sm) var(--f-body); padding: 0.5rem; border-radius: var(--
 .card dl { margin: 0; display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.3rem 0.6rem; font-size: var(--s-sm); }
 .card dt { font: 600 var(--s-xs)/1.6 var(--f-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .card dd { margin: 0; }
-.card pre { margin: 0; padding: 0.5rem 0.6rem; background: var(--code-bg); border-radius: 4px; overflow-x: auto; font: var(--s-xs)/1.5 var(--f-mono); }
+.card pre { margin: 0; padding: 0.5rem 0.6rem; background: var(--code-bg); border-radius: 4px; overflow-x: auto; font: var(--s-xs)/1.5 var(--f-mono);  white-space: pre-wrap; }
 .pic { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; font: 600 var(--s-xs) var(--f-mono); min-height: 2rem; }
 .pic span { border: 1.5px solid var(--accent); border-radius: 3px; padding: 0.15rem 0.4rem; background: var(--accent-soft); }
 .pic i { font-style: normal; color: var(--muted); }
@@ -367,40 +367,51 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   <p class="lede">A hands-on course in the skills a computer science degree drills without always naming them: keeping an accurate picture of what the computer does, debugging by testing "what if" worlds, and picking the data shape that makes a problem easy.</p>
 
   <h3>The argument you read</h3>
-  <p>Joe Marshall's post <em>Not Everyone Can Code</em> says debugging is counterfactual reasoning. To find a bug you have to suppose something you believe is false ("this pointer is null, even though I checked it two lines ago") and work out how that world could exist. He maps it onto Judea Pearl's three levels of causal reasoning:</p>
+  <p>Joe Marshall's blog post <em>Not Everyone Can Code</em> says debugging needs one particular thinking skill: <strong>counterfactual reasoning</strong>. That means reasoning about something you believe is false, the way "What if the dinosaurs hadn't died out?" asks about a world that didn't happen.</p>
+  <p>In debugging it sounds like this: "Suppose this variable is empty, even though I checked it two lines ago. How could that happen?" Your instinct says it can't be empty, because you wrote the check. To find the bug you have to set that instinct aside and take the "impossible" seriously.</p>
+  <p>He borrows a three-step ladder from Judea Pearl, a computer scientist who studies cause and effect. Each step asks a harder kind of question:</p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Pearl's level</th><th>The question</th><th>What it sounds like in code</th></tr></thead>
+      <thead><tr><th>Step</th><th>The question</th><th>What it sounds like when debugging</th></tr></thead>
       <tbody>
-        <tr><td>1. Association</td><td>What is?</td><td>"The total is wrong whenever the cart has a mug in it."</td></tr>
-        <tr><td>2. Intervention</td><td>What if I do X?</td><td>"If I remove the mug, the total is right again."</td></tr>
-        <tr><td>3. Counterfactual</td><td>Why did Y happen?</td><td>"For the total to be <code>NaN</code>, some multiplication must have had a non-number in it. Which one, and how did it get there?"</td></tr>
+        <tr><td>1. Noticing a pattern</td><td>What tends to happen together?</td><td>"The total is wrong whenever the cart has a mug in it."</td></tr>
+        <tr><td>2. Trying a change</td><td>What happens if I change something?</td><td>"If I remove the mug, the total is right again."</td></tr>
+        <tr><td>3. Explaining the cause</td><td>Why did it happen?</td><td>"For the total to be <code>NaN</code> (JavaScript's 'not a number' result), some multiplication must have been given something that isn't a number. Which one, and how did it get there?"</td></tr>
       </tbody>
     </table>
   </div>
-  <p>He argues that people who copy recipes, glue libraries together or prompt an LLM without simulating the system stay on levels 1 and 2, and that concurrency makes level 3 much harder, because you have to reason about orderings you have never seen happen.</p>
+  <p>Steps 1 and 2 can be done by trial and error. Step 3 needs a picture of what the code does, line by line, so you can work backwards from the symptom to the cause.</p>
+  <p>His argument is that many people who write code stay on steps 1 and 2. They reuse patterns that worked before, combine libraries (ready-made code written by other people), or ask an AI assistant, without picturing what the computer actually does. That works until something breaks in a new way. Then only step 3 helps.</p>
+  <p>He adds that <strong>concurrency</strong> makes step 3 much harder. Concurrency means several tasks running at overlapping times, such as two network requests, or two people saving the same document. The bug can depend on the exact order the tasks' steps happened in. There are many possible orders, and testing will show you only a few of them. Chapter 7 lets you try this yourself.</p>
 
   <h3>What the research adds</h3>
-  <p>The diagnosis is useful. The fatalism is less well supported. Some points from computing-education research:</p>
+  <p>His description of the skill is useful. His conclusion, that some people simply can't learn it, is less well supported. Here's what studies of how people learn programming say:</p>
   <ul>
-    <li><strong>The cited studies measured untrained reasoning.</strong> The 1970s work he cites (Dulit, Keating, Neimark) studied Piaget-style "formal operational" reasoning in people who had not been taught it. That tells you where people start, not where they can get to. (I could not check the exact percentages he quotes.)</li>
-    <li><strong>Debugging improves when it is taught as a procedure.</strong> In a controlled study, students given explicit instruction in systematic debugging improved both their debugging performance and their confidence compared with a control group (Michaeli &amp; Romeike, 2019). A 2021 study found few novices use the hypothesis-testing method on their own, which suggests the problem is that nobody teaches it.</li>
-    <li><strong>Labelling the purpose of each step helps.</strong> Worked examples whose steps are labelled with their goal ("subgoal labels") lowered dropout and failure in an intro programming course (Margulieux, Morrison &amp; Decker, 2020).</li>
-    <li><strong>You need a model of the machine.</strong> Novices struggle when they don't know what the computer does with each line. Researchers call the simplified picture you need a "notional machine" (du Boulay; Sorva, 2013). Chapter 1 builds one.</li>
-    <li><strong>Reading and writing code are separate skills.</strong> PRIMM (Sentance and colleagues) orders practice as <em>Predict, Run, Investigate, Modify, Make</em>. Parsons problems, where you put scrambled lines in order, let you practise structure with less load (Ericson and colleagues).</li>
+    <li><strong>The studies he cites tested people who had never been taught.</strong> The 1970s research he mentions (by Dulit, Keating and Neimark) measured abstract "what if" reasoning, in the style of the psychologist Jean Piaget, in people with no training in it. That shows where people start, not how far they can get with practice. (I couldn't check the exact percentages he quotes.)</li>
+    <li><strong>Debugging gets better when it's taught as a step-by-step method.</strong> In one experiment, students taught a systematic debugging procedure became better at finding bugs, and more confident, than a similar group who weren't taught it (Michaeli &amp; Romeike, 2019). A 2021 study found that few beginners test their guesses methodically on their own. That points to a skill nobody teaches, rather than one people can't learn.</li>
+    <li><strong>Knowing what each step is for helps.</strong> When the worked examples in an introductory programming course labelled every step with its purpose, fewer students failed or dropped out (Margulieux, Morrison &amp; Decker, 2020). This course explains the purpose of each step for the same reason.</li>
+    <li><strong>Beginners need an accurate picture of what the computer does.</strong> Many beginner mistakes come from a wrong idea of what happens when a line of code runs. Researchers call the simplified but correct picture a "notional machine" (du Boulay; Sorva, 2013). Chapter 1 builds one with you.</li>
+    <li><strong>Reading code and writing code are separate skills, and reading comes first.</strong> A teaching method called PRIMM has learners <em>Predict</em> what code does, <em>Run</em> it, <em>Investigate</em> it, <em>Modify</em> it, and then <em>Make</em> their own (Sentance and colleagues). "Parsons problems" give you the right lines of code in the wrong order to rearrange, so you can practise how a program is built without also having to remember every symbol (Ericson and colleagues). This course uses both.</li>
   </ul>
 
   <div class="note">
-    <p><strong>The move this course is built on.</strong> Marshall himself says very few people can reason about concurrency "without the aid of formal models or pure architectural restraint." Experts don't hold every what-if in their head either. They push the what-ifs out into things they can look at: a trace, a log line, an assertion, a test, a data structure that can't represent a bad state. Those aids can be learned, and they are what this course teaches.</p>
+    <p><strong>The idea this course is built on.</strong> Marshall himself says few people can reason about concurrency "without the aid of formal models or pure architectural restraint". In plainer words: without written-down tools, or without designing the program so the dangerous cases can't happen. Experienced programmers don't hold every "what if" in their heads either. They move each one out of their head into something they can look at:</p>
+    <ul>
+      <li>a printed value (Chapter 2)</li>
+      <li>a line in the code that stops the program when an assumption turns out wrong (Chapter 6)</li>
+      <li>an automatic test (Chapter 6)</li>
+      <li>a data design where a bad situation can't even be written down (Chapters 3 and 6)</li>
+    </ul>
+    <p>Those habits can be learned, and teaching them is what this course is for.</p>
   </div>
 
   <h3>How to use this</h3>
   <ul>
-    <li><strong>Predict before you run.</strong> Every code box has a <mark>Predict</mark> field. Type what you think will happen, then press Run. Being wrong is the useful part: it shows you exactly where your mental model differs from the machine.</li>
+    <li><strong>Predict before you run.</strong> Every code box has a <mark>Predict</mark> field. Type what you think will happen, then press Run. Being wrong is the useful part: it shows you exactly where your picture of the code differs from what the computer does.</li>
     <li><strong>Then modify.</strong> All code boxes are editable. Change one thing, predict again, run again.</li>
     <li><strong>Mark chapters done</strong> at the bottom of each one. Progress is saved in this browser only.</li>
     <li>Examples are in JavaScript, because it runs right here in the page. Every idea carries over to Python, Java, C# and the rest; Chapter 3 gives the Python names too.</li>
-    <li><strong>New to JavaScript syntax?</strong> Chapter 1 starts with a one-table guide, and every code box has a <strong>Syntax in this example</strong> panel explaining its own lines.</li>
+    <li><strong>New to JavaScript syntax?</strong> Chapter 1 starts with a guide to the syntax this course uses, grouped by what each piece is for. Every code box also has a <strong>Syntax in this example</strong> panel explaining its own lines.</li>
   </ul>
   <p class="small">This page is a single file that works offline. Nothing you type leaves your computer.</p>
 </section>
@@ -409,7 +420,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="machine" data-title="The machine in your head">
   <p class="eyebrow">Chapter 1</p>
   <h2>The machine in your head</h2>
-  <p>You can't imagine a world where "this variable is null" unless you know how a variable gets its value in the first place. Debugging is a comparison: what you think the machine did versus what it did. If your picture of the machine is vague, there is nothing to compare against. So we start by making the picture exact.</p>
+  <p>Debugging is a comparison between what you think the computer did and what it actually did. If your picture of what the computer does is vague, you have nothing to compare against, and you can't ask "how could this variable be empty?" without knowing how a variable gets its value in the first place. So this chapter makes that picture exact.</p>
 
   <h3>Reading JavaScript: the syntax this course uses</h3>
   <p>Every program, whatever the language, does the same few jobs: it <strong>remembers</strong> values, <strong>groups</strong> them, <strong>decides</strong> what to do, <strong>repeats</strong> work, <strong>packages</strong> steps so they can be reused, and <strong>shows</strong> results. Each piece of syntax exists for one of those jobs. Learn the job first and the symbols stop being arbitrary.</p>
@@ -548,17 +559,17 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   </div>
 
   <h3>Beliefs that break programs</h3>
-  <p>These are the most common wrong models researchers find in learners. Each one produces bugs you can't find, because your simulation of the code agrees with the bug.</p>
+  <p>These are the most common wrong beliefs researchers find in people learning to program. Each one causes bugs that are very hard to find, because when you run the code in your head using the wrong belief, you get the same wrong answer the computer did, so nothing looks wrong.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Wrong belief</th><th>What the machine actually does</th></tr></thead>
       <tbody>
         <tr><td><code>b = a</code> links b and a forever</td><td>For plain values, b effectively gets its own copy at that moment. For containers, both names point at the same one until one of them is pointed somewhere else.</td></tr>
         <tr><td><code>const</code> makes an object unchangeable</td><td><code>const</code> stops the <em>name</em> from pointing elsewhere. The object itself can still change.</td></tr>
-        <tr><td><code>{...obj}</code> makes a full copy</td><td>The spread copies one level. Nested arrays and objects are still shared. Use <code>structuredClone(obj)</code> for a deep copy.</td></tr>
-        <tr><td>Code runs in the order it's written</td><td>Inside one function, yes. Callbacks and anything after an <code>await</code> run later, when the machine gets to them. Chapter 7 is about this.</td></tr>
-        <tr><td>A variable can hold "whatever the user typed"</td><td>Input from a form, file, URL or API is always a string or raw JSON until you convert it. <code>"2" + 2</code> is <code>"22"</code>.</td></tr>
-        <tr><td>If the program didn't crash, the value is fine</td><td>JavaScript keeps going with <code>undefined</code> and <code>NaN</code>. The crash, if any, happens far from the cause.</td></tr>
+        <tr><td><code>{...obj}</code> makes a full copy</td><td>It copies only the outer container. Any containers inside it (an array of tags, say) are shared between the original and the copy, as the next example shows. <code>structuredClone(obj)</code> copies everything, all the way down.</td></tr>
+        <tr><td>Code runs in the order it's written</td><td>Within one function, yes. But code you hand over to run later doesn't. That includes a function that runs when someone clicks a button, code after an <code>await</code> (which waits for something like a server reply), and timers. That code runs when its moment comes, possibly after lines written below it. Chapter 7 is about this.</td></tr>
+        <tr><td>If the user typed a number, I have a number</td><td>Data from a form, a file, the address bar or a server arrives as text until you convert it, even when it looks like a number. So <code>"2" + 2</code> joins the text and gives <code>"22"</code>. Convert with <code>Number(value)</code> first.</td></tr>
+        <tr><td>If the program didn't crash, the value is fine</td><td>JavaScript usually carries on with <code>undefined</code> ("no value") or <code>NaN</code> ("not a number") instead of stopping. The wrong value travels through the program, and if anything crashes, it's far from where the mistake happened.</td></tr>
       </tbody>
     </table>
   </div>
@@ -574,33 +585,34 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="debug" data-title="Debugging as a procedure">
   <p class="eyebrow">Chapter 2</p>
   <h2>Debugging as a procedure</h2>
-  <p>The "insulting falsehood" Marshall describes is easier to entertain once you see it is just a line on a list. You don't have to believe that the value is wrong. You only have to write it down as one possible world and then check it. That turns level 3 reasoning ("why?") into a series of level 2 experiments ("what if I look here?"), which anyone can run.</p>
+  <p>Marshall's hard part is taking seriously an explanation you're sure is false, like "this value is empty even though I checked it". It gets much easier once that explanation is just one line on a written list. You don't have to believe it. You write it down as one possible explanation, then run a quick check to rule it in or out.</p>
+  <p>This chapter calls each possible explanation a <strong>world</strong>: one version of events that would produce the bug you're seeing. Listing worlds and checking them one at a time turns the hard question "why did this happen?" (step 3 of the ladder in Chapter 0) into a series of simple "what do I see if I look here?" checks (step 2). Anyone can run those.</p>
 
-  <h3>The loop</h3>
+  <h3>The method, step by step</h3>
   <ol>
-    <li><strong>Observe.</strong> Write down the symptom exactly: the input, what you expected, what you got. Make it happen again on demand.</li>
-    <li><strong>List the worlds.</strong> Ask: "For this output to appear, what must be true?" Write every answer down, including the ones you're sure are false. Especially those.</li>
-    <li><strong>Predict.</strong> For each world: "If this were true, what would I see if I looked at X?" A hypothesis that predicts nothing is useless.</li>
-    <li><strong>Experiment.</strong> Pick the check that rules out the most worlds for the least effort. Log a value, run a smaller input, comment out a line.</li>
-    <li><strong>Conclude and record.</strong> Cross out the worlds the evidence killed. Keep a logbook: what you tried, what you saw, what it means. Repeat until one world is left.</li>
+    <li><strong>Observe.</strong> Write down the symptom exactly: what you did, what you expected, what you got. Then find a way to make it happen again whenever you want. A bug you can't trigger on purpose is one you can't check a fix against.</li>
+    <li><strong>List the worlds.</strong> Ask: "For this result to appear, what would have to be true?" Write down every answer, including the ones you're sure are false. Especially those: the bug is hiding in something you believe can't happen, or you'd have found it already.</li>
+    <li><strong>Predict.</strong> For each world, ask: "If this were the real one, what would I see if I looked at X?" A guess that doesn't predict anything you can look at can't be checked, so rewrite it until it does.</li>
+    <li><strong>Experiment.</strong> Pick the check that rules out the most worlds for the least effort. Typical checks: print a value with <code>console.log</code>, try a smaller input, or temporarily switch a line off by putting <code>//</code> in front of it.</li>
+    <li><strong>Conclude and record.</strong> Cross out the worlds the evidence ruled out. Keep a logbook (a running note) of what you tried, what you saw and what it means. Repeat until one world is left.</li>
   </ol>
-  <p>Andreas Zeller's <em>Why Programs Fail</em> calls this scientific debugging. The logbook matters because without it you forget what you already ruled out and start testing in circles.</p>
+  <p>Andreas Zeller, a researcher who studies debugging, calls this <em>scientific debugging</em> in his book <em>Why Programs Fail</em>, because it's the scientific method applied to code. The logbook matters more than it seems. Without one, you forget what you already ruled out and end up checking the same things in circles.</p>
 
   <h3>Bug lab: the NaN checkout</h3>
   <div class="panel">
     <p class="panel-title"><b>Bug report</b></p>
-    <p>"My checkout total says <code>NaN</code>." Another customer's cart works fine. Here is the function and the two carts.</p>
+    <p>A customer writes: "My checkout total says <code>NaN</code>." (<code>NaN</code> means "Not a Number". JavaScript produces it when it's asked to do maths with something that isn't a number.) Another customer's cart works fine. Below are the function that works out the total and the two carts. Work through the three panels in order.</p>
     <pre class="static" id="lab-code" data-notes="lab"></pre>
   </div>
   <div class="lab">
     <div class="panel">
       <p class="panel-title"><b>Step 1–3</b> · possible worlds</p>
-      <p class="small">Read each one. Before opening "If this were true…", decide what you would expect to see. Untick a world when the evidence rules it out.</p>
+      <p class="small">Each line is one possible explanation. Before opening "If this were true…", decide what you would expect to see. Untick a world once the evidence rules it out.</p>
       <div id="hyps"></div>
     </div>
     <div class="panel">
       <p class="panel-title"><b>Step 4</b> · experiments</p>
-      <p class="small">Each button runs real code. Choose the one you think rules out the most worlds.</p>
+      <p class="small">Each button runs a real check on the code and records the result in the logbook below. Try to pick the check that rules out the most worlds first.</p>
       <div class="exp-list" id="exps"></div>
     </div>
   </div>
@@ -623,10 +635,11 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
   </div>
 
   <h3>Search, don't stare: the wolf fence</h3>
-  <p>When a value goes wrong somewhere in a long chain of steps, don't read every step. Check the value in the middle. If it's already wrong, the bug is in the first half; if it's right, the second half. Each check throws away half of the program. Eight steps need at most three checks. The same idea at the level of history is <code>git bisect</code>, which finds the commit that broke something.</p>
+  <p>Often a value starts out right and comes out wrong after passing through many steps. Reading every step looking for the mistake is slow. Instead, check the value halfway through. If it's already wrong there, the bug is in the first half; if it's still right, it's in the second half. Each check rules out half of the remaining steps, so eight steps need at most three checks, and a thousand need about ten.</p>
+  <p>The name comes from an old joke: to find a wolf in Alaska, build a fence down the middle, listen for which side it howls on, and repeat on that side. If you use Git (a tool that saves every version of your code), the command <code>git bisect</code> does the same halving across your saved versions to find the one where something broke.</p>
   <div class="panel" id="wolf">
     <p class="panel-title"><b>Price pipeline</b> · <span id="wolf-count">0 checks</span></p>
-    <p>Input: <code>" 19.99 EUR "</code>, quantity 3. Orders of 3 or more get 10% off, then shipping of €4.99 is added. The right answer is <strong>€58.96</strong>. The program prints <strong>€64.86</strong>. Click a probe to see the value at that point. Find the broken step in as few probes as you can.</p>
+    <p>Input: <code>" 19.99 EUR "</code>, quantity 3. Orders of 3 or more get 10% off, then shipping of €4.99 is added. The right answer is <strong>€58.96</strong>. The program prints <strong>€64.86</strong>. Each "Probe" button shows you the value at that point in the chain, as if you'd added a <code>console.log</code> there. Find the broken step using as few probes as you can.</p>
     <div class="pipeline" id="pipeline"></div>
     <div class="row">
       <label for="wolf-guess"><strong>Broken step:</strong></label>
@@ -637,23 +650,23 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     <div id="wolf-feedback"></div>
   </div>
 
-  <h3>Tactics that make counterfactuals cheap</h3>
+  <h3>Quick checks worth knowing</h3>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Tactic</th><th>When to use it</th></tr></thead>
+      <thead><tr><th>Check</th><th>When and how to use it</th></tr></thead>
       <tbody>
-        <tr><td>Read the whole error message and stack trace</td><td>Always first. The trace lists the functions that were running when it failed. The first line that names one of your own files is usually where to look.</td></tr>
-        <tr><td>Shrink the input</td><td>The bug appears on big data. Cut it in half until it disappears; the last piece you removed holds the cause.</td></tr>
-        <tr><td>Diff working against broken</td><td>One case works and one doesn't (like the two carts). The difference between them is a short list of suspects.</td></tr>
-        <tr><td>Log the <em>type</em> as well as the value</td><td><code>console.log(typeof x, x)</code>. "8" and 8 look the same in many places.</td></tr>
-        <tr><td>Explain it out loud, line by line</td><td>"Rubber duck" debugging. Saying each step forces you to simulate it instead of skimming.</td></tr>
-        <tr><td>Use the debugger's breakpoints</td><td>You want to see many variables at one moment. Browser DevTools and VS Code both let you pause and look.</td></tr>
-        <tr><td>Bisect history</td><td>It worked last week. <code>git bisect</code> searches the commits between.</td></tr>
+        <tr><td>Read the whole error message</td><td>Always first. Below the message is a <em>stack trace</em>: the list of functions that were running when the error happened, most recent first. The first line that names one of your own files is usually where to look.</td></tr>
+        <tr><td>Shrink the input</td><td>The bug only shows up with a lot of data. Remove half the data and check again. Keep halving until the bug disappears; the last piece you removed contains the cause.</td></tr>
+        <tr><td>Compare a working case with a broken one</td><td>One case works and a similar one doesn't, like the two carts above. List every difference between them; the cause is on that short list.</td></tr>
+        <tr><td>Print the type as well as the value</td><td><code>console.log(typeof x, x)</code>. The text <code>"8"</code> and the number <code>8</code> look identical when printed, but behave differently.</td></tr>
+        <tr><td>Explain it out loud, line by line</td><td>Known as "rubber duck debugging", after a programmer who explained code to a toy duck on their desk. Saying each step out loud forces you to think through what it really does instead of skimming what you meant it to do.</td></tr>
+        <tr><td>Pause the program with a breakpoint</td><td>When you want to see many variables at one moment. A breakpoint stops the program at a line you choose so you can inspect everything. In Chrome or Edge: press F12, open the Sources tab, and click a line number. VS Code has the same feature.</td></tr>
+        <tr><td>Search your saved versions</td><td>It worked last week and doesn't now. <code>git bisect</code> halves the versions in between until it finds the change that broke it.</td></tr>
       </tbody>
     </table>
   </div>
   <div class="note">
-    <p><strong>Using an LLM without skipping level 3.</strong> Paste the symptom and your list of worlds, and ask for experiments that would tell them apart, not for a fix. When it proposes a fix, ask "which of my worlds does this assume, and what evidence shows that world is the real one?" If it can't answer, you haven't found the bug yet.</p>
+    <p><strong>Using an AI assistant without skipping the thinking.</strong> If you only ask ChatGPT, Claude or Copilot for a fix, you may get one that hides the symptom without removing the cause. Instead, paste the symptom and your list of worlds, and ask which checks would tell them apart. When it does suggest a fix, ask: "Which of my worlds does this assume is the real one, and what evidence shows that?" If neither of you can answer, you haven't found the bug yet.</p>
   </div>
   <label class="done-box"><input type="checkbox" data-done="debug"> I can list possible worlds and pick experiments to rule them out</label>
 </section>
@@ -662,23 +675,24 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="data" data-title="Data shapes">
   <p class="eyebrow">Chapter 3</p>
   <h2>Data shapes come first</h2>
-  <p>The bug lab ended in a data problem: one item had <code>quantity</code> where the code expected <code>qty</code>. That's typical. Most confusing code is confusing because the data is the wrong shape, and the code is working around it.</p>
-  <blockquote>"Show me your flowchart and conceal your tables, and I shall continue to be mystified. Show me your tables, and I won't usually need your flowchart; it'll be obvious."<cite>Fred Brooks, <em>The Mythical Man-Month</em></cite></blockquote>
-  <blockquote>"Data dominates. If you've chosen the right data structures and organized things well, the algorithms will almost always be self-evident."<cite>Rob Pike, <em>Notes on Programming in C</em></cite></blockquote>
-  <p><em>How to Design Programs</em> makes this a rule: write down what your data looks like before writing any function, because the shape of the data decides the shape of the code. A list leads to a loop. A tree leads to recursion. A choice between kinds leads to an <code>if</code> or <code>switch</code> with one branch per kind.</p>
+  <p>The bug lab ended in a data problem: one item had <code>quantity</code> where the code expected <code>qty</code>. That's typical. By a data's <strong>shape</strong> we mean how it's organised: a list, a single record with named parts, a lookup table and so on. A lot of confusing code is confusing because its data has the wrong shape, and the code is twisting itself to work around that. Choose the right shape and the code tends to become simple.</p>
+  <blockquote>"Show me your flowchart and conceal your tables, and I shall continue to be mystified. Show me your tables, and I won't usually need your flowchart; it'll be obvious."<cite>Fred Brooks, <em>The Mythical Man-Month</em> (1975). Brooks managed some of the first very large software projects. By "flowchart" he meant the steps of the program, and by "tables" its data.</cite></blockquote>
+  <blockquote>"Data dominates. If you've chosen the right data structures and organized things well, the algorithms will almost always be self-evident."<cite>Rob Pike, <em>Notes on Programming in C</em> (1989). Pike later co-created the Go programming language. "Data structures" means the shapes in this chapter; "algorithms" means the step-by-step procedures that work on them.</cite></blockquote>
+  <p>The textbook <em>How to Design Programs</em> turns this into a rule: write down what your data looks like before writing any function, because the shape of the data decides the shape of the code. A list of items leads to a loop over them. Data nested inside data of the same kind (comments with replies) leads to a function that calls itself, which Chapter 6 covers. Data that can be one of several kinds leads to an <code>if</code> with one branch per kind.</p>
 
   <h3>Six questions to ask about any data</h3>
+  <p>Ask these in order. The first "yes" usually tells you which shape to use. Each shape is explained in the field guide below.</p>
   <ol>
     <li><strong>Is it one thing with named parts?</strong> A user has a name, email and age. → <em>Object / record</em></li>
     <li><strong>Is it a small, fixed group where position is the meaning?</strong> An (x, y) point, a (value, error) pair. → <em>Tuple</em></li>
     <li><strong>Is it many things of the same kind, in an order?</strong> Messages in a chat. → <em>Array / list</em></li>
-    <li><strong>Will you look things up by a key?</strong> Find the user with ID 42. → <em>Map / dictionary</em></li>
+    <li><strong>Will you look things up by a key (a name or ID)?</strong> Find the user with ID 42. → <em>Map</em> (Python calls it a <em>dictionary</em>)</li>
     <li><strong>Do you only care whether something is present, with no duplicates?</strong> Tags, visited pages. → <em>Set</em></li>
-    <li><strong>Does it have a structure of its own?</strong> Processed newest-first or oldest-first → <em>stack</em> or <em>queue</em>. Contains smaller versions of itself → <em>tree</em>. Arbitrary connections → <em>graph</em>.</li>
+    <li><strong>Does it have a structure of its own?</strong> If items are handled newest-first, use a <em>stack</em>; oldest-first, a <em>queue</em>. If items contain smaller items of the same kind, use a <em>tree</em>. If any item can be connected to any other, use a <em>graph</em>.</li>
   </ol>
 
   <h3>Field guide</h3>
-  <p>"Fast" and "slow" below are about how the work grows as the data grows. Fast means the same speed for 10 items or 10 million. Slow means the machine checks every item, so 10× more data is 10× more work. Computer scientists write these as O(1) and O(n).</p>
+  <p>"Fast" and "slow" below describe how the work grows as the data grows, not how long one operation takes. <strong>Fast</strong> means it takes about the same time for 10 items or 10 million. <strong>Slow</strong> means the computer has to look at every item, so 10 times more data means 10 times more work. You'll see this written as O(1) for fast and O(n) for slow, called "Big O notation", in documentation and job interviews. Each card also has a <strong>Warning sign</strong>: a pattern in code suggesting you picked the wrong shape.</p>
   <div class="guide" id="guide"></div>
 
   <h3>The costs side by side</h3>
@@ -686,12 +700,12 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     <table>
       <thead><tr><th>Operation</th><th>Array</th><th>Map / object</th><th>Set</th></tr></thead>
       <tbody>
-        <tr><td>Get item number i</td><td class="fast">instant · O(1)</td><td>n/a</td><td>n/a</td></tr>
-        <tr><td>Find by key / ID</td><td class="slow">scans all · O(n)</td><td class="fast">instant · O(1)</td><td>n/a</td></tr>
+        <tr><td>Get the item at a position, like <code>list[3]</code></td><td class="fast">instant · O(1)</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td>Find an item by its key or ID</td><td class="slow">scans all · O(n)</td><td class="fast">instant · O(1)</td><td>n/a</td></tr>
         <tr><td>"Is X in here?"</td><td class="slow">scans all · O(n)</td><td class="fast">instant (by key)</td><td class="fast">instant · O(1)</td></tr>
         <tr><td>Add at the end</td><td class="fast">instant</td><td class="fast">instant</td><td class="fast">instant</td></tr>
         <tr><td>Add or remove at the front</td><td class="slow">shifts all · O(n)</td><td>n/a</td><td>n/a</td></tr>
-        <tr><td>Keep things in order</td><td class="fast">yes</td><td>insertion order (Map)</td><td>insertion order</td></tr>
+        <tr><td>Keep things in order</td><td class="fast">yes</td><td>the order you added them (Map)</td><td>the order you added them</td></tr>
         <tr><td>Allows duplicates</td><td>yes</td><td>keys unique</td><td>no</td></tr>
       </tbody>
     </table>
@@ -711,23 +725,24 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
     </div>
     <div class="race-bars" id="race-bars" role="img" aria-label="Time taken by array.includes compared with set.has"></div>
     <p class="race-verdict" id="race-verdict"></p>
-    <p class="small">Try 1,000 items, then 1,000,000. The array's time grows with the size; the Set's barely moves. For a list of 20 things, use whatever reads best. The difference only starts to matter for large collections checked many times, such as inside a loop.</p>
+    <p class="small">Each run checks 2,000 random values against the collection. Try 1,000 items, then 1,000,000. The array's time grows with its size because it looks at items one by one; the Set's barely moves because it jumps straight to the answer. For a list of 20 things, use whichever reads best. The difference only matters for big collections checked many times, such as inside a loop.</p>
   </div>
 
   <h3>Tuples, records and the key trap</h3>
-  <p>JavaScript has no real tuple type. People use a short array instead: <code>[x, y]</code>, or <code>const [count, setCount] = useState(0)</code> in React. That's fine for two values whose meaning is obvious. Past two or three, or when the order could be confused, use an object with names. Map libraries disagree about whether a point is <code>[lat, lng]</code> (Leaflet) or <code>[lng, lat]</code> (GeoJSON), and that disagreement has put plenty of markers in the ocean. <code>{ lat, lng }</code> can't be swapped by accident.</p>
-  <p>In Python, tuples are immutable and can be dictionary keys, so <code>visited[(2, 3)] = True</code> works. JavaScript compares arrays by identity, not by contents. Predict this one carefully:</p>
+  <p>A <strong>tuple</strong> is a short group of values with a fixed length, where each position has a meaning: <code>(x, y)</code> on a chart, or <code>(latitude, longitude)</code> on a map. Python has a built-in tuple type. JavaScript doesn't, so people use a short array instead, like <code>[x, y]</code>. You'll see this in React: <code>const [count, setCount] = useState(0)</code> gives you back two things, the current value and a function to change it, and the square brackets on the left unpack them into two names.</p>
+  <p>That's fine for two values whose meaning is obvious. Beyond two or three, or whenever the order could get mixed up, use an object with named fields instead. Mapping tools are a real example: Leaflet (a popular map library) expects <code>[lat, lng]</code>, while GeoJSON (a common file format for map data) uses <code>[lng, lat]</code>. Mixing them up has put plenty of map pins in the middle of the ocean. <code>{ lat, lng }</code> can't be swapped by accident.</p>
+  <p>A Python tuple can't be changed after it's created, so Python lets you use one as a dictionary key: <code>visited[(2, 3)] = True</code> works. JavaScript is different. A Map treats two arrays as the same key only if they are the very same container (Chapter 1, Rule 1), not if they merely contain the same values. Predict this one carefully:</p>
   <div class="runner" data-ex="tuplekey" data-prompt="What do the two get() calls return?"></div>
-  <p>A plain object is the right choice for a <em>record</em>: a fixed, known set of fields. Use a <code>Map</code> for a <em>collection</em> keyed by values you don't know in advance. Object keys are always turned into strings, which causes quiet collisions:</p>
+  <p>When should you use an object, and when a Map? Use an object for a <em>record</em>: one thing whose fields you know when writing the code, like a user's name and email. Use a Map for a <em>collection</em>: many entries looked up by keys you only find out while the program runs, like user IDs. One reason: an object turns every key into text, so two different keys can silently become one:</p>
   <div class="runner" data-ex="objvsmap" data-prompt="How many keys does each end up with?"></div>
 
   <h3>Real data nests</h3>
-  <p>Real programs combine the shapes: a Map from ID to record, where each record holds an array, and so on. A common, useful pattern is grouping: a Map from a key to an array of everything with that key.</p>
+  <p>Real programs combine the shapes: a Map from ID to a record, where each record holds an array, and so on. One combination you'll use often is <strong>grouping</strong>: a Map from a key (a city) to an array of everything with that key (the people who live there). It's how you build "orders per customer" or "products per category".</p>
   <div class="runner" data-ex="groupby" data-prompt="What does the Map contain?"></div>
-  <p>When the same thing appears in several places (a user who wrote posts and comments), store it once in a Map by ID and refer to it by ID elsewhere. This is called normalizing, and it's what databases do. If the user's name is copied into every post, renaming the user means finding every copy. Miss one and the copies disagree.</p>
+  <p>When the same thing appears in several places, like a user who wrote several posts and comments, store it once (in a Map by ID) and refer to it by its ID everywhere else. This is called <strong>normalizing</strong>, and it's how databases are designed. The reason: if the user's name is copied into every post, renaming the user means finding and updating every copy, and if you miss one, the copies disagree.</p>
 
   <h3>Build it: count words</h3>
-  <p>A Parsons problem. The lines of a working function are scrambled. Put them in order with the arrows, then check. Indentation is a clue.</p>
+  <p>A rearranging exercise (a Parsons problem, see Chapter 0). These are the lines of a working function that counts how often each word appears in a text, but they're in the wrong order. Use the arrows to put them in order, then check. The indentation (how far each line is pushed right) is a clue: lines inside a block are indented further than the line that opens it.</p>
   <div class="panel">
     <ul class="parsons" id="parsons" data-notes="wordcount"></ul>
     <div class="row">
@@ -743,7 +758,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="wizard" data-title="Which structure?">
   <p class="eyebrow">Chapter 4</p>
   <h2>Which structure? A decision helper</h2>
-  <p>Use this when you're starting a feature and aren't sure how to hold the data. Answer for the job you'll do <em>most often</em>; that's what the structure should make easy. When two jobs matter equally, the answer is often "both": an array for order plus a Map for lookup.</p>
+  <p>Use this when you're starting to build something and aren't sure how to store its data. Answer for the thing you'll do with the data <em>most often</em>, because that's what the right shape makes easy. If two things matter equally, the answer is often to use two shapes together, for example an array to keep the order plus a Map to find items by ID quickly. The result shows the shape, example code, and the most common mistake with it.</p>
   <div class="panel wizard">
     <div class="crumbs" id="wiz-crumbs"></div>
     <div id="wiz-body"></div>
@@ -759,7 +774,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="drills" data-title="Scenario drills">
   <p class="eyebrow">Chapter 5</p>
   <h2>Scenario drills</h2>
-  <p>Sixteen situations from real apps. Pick the structure you'd reach for first. Each answer explains the trade-off, because "it depends" is often the honest answer and the useful part is knowing what it depends on.</p>
+  <p>Sixteen situations from real apps. For each one, pick the data shape you'd use first. After you answer, an explanation appears with the reasoning and a line of example code. Sometimes two answers could work. In those cases the explanation says what tips the choice, because knowing what it depends on is the skill you're practising.</p>
   <p class="score" id="drill-score">Score: 0 / 0 answered</p>
   <div id="drill-list"></div>
   <div class="row"><button type="button" class="quiet" id="drill-reset">Clear answers</button></div>
@@ -770,9 +785,10 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
 <section class="chapter" id="techniques" data-title="Techniques: when to use what">
   <p class="eyebrow">Chapter 6</p>
   <h2>Techniques: when to use what</h2>
-  <p>Each technique here does the same job: it cuts down the number of worlds you have to imagine when something goes wrong. A pure function has one world per input. A state machine has only valid states. An assertion turns a "suppose this were false" into a line that checks.</p>
+  <p>When something goes wrong, the fewer possible explanations (the "worlds" from Chapter 2) there are, the faster you find the cause. Each technique below removes some of them. For each one, this chapter says what it is, when to use it, and which kind of bug it prevents.</p>
 
   <h3>Loops and map / filter / reduce</h3>
+  <p>Most loops over an array do one of a few common jobs. Arrays have a built-in function for each job. Using the right one tells the reader at a glance what the loop is for ("keep only the paid orders"), and leaves less room for mistakes like forgetting to add to the result.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>You want to…</th><th>Use</th></tr></thead>
@@ -781,26 +797,27 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
         <tr><td>Keep some items</td><td><code>filter</code></td></tr>
         <tr><td>Combine everything into one value (sum, max, object)</td><td><code>reduce</code>, or a plain loop if reduce gets hard to read</td></tr>
         <tr><td>Find the first match, or ask "any?" / "all?"</td><td><code>find</code>, <code>some</code>, <code>every</code>; they stop early</td></tr>
-        <tr><td>Stop partway, track several things at once, or squeeze out speed</td><td>A plain <code>for</code> loop</td></tr>
+        <tr><td>Stop partway, track several things at once, or squeeze out speed</td><td>A plain <code>for…of</code> loop. It's more flexible, and a fine choice whenever the built-in functions make the code harder to read.</td></tr>
       </tbody>
     </table>
   </div>
   <div class="runner" data-ex="mfr" data-prompt="What are paidTotals, revenue, and the found order?"></div>
 
   <h3>Lookup table instead of an if/else chain</h3>
-  <p>When a chain of <code>if</code>s maps one value to another, it's data pretending to be code. Put it in an object or Map. Adding a country becomes a one-line data change, and "what happens for an unknown country?" gets one clear answer instead of falling off the end of the chain.</p>
+  <p>Sometimes code is a long chain like <code>if (country === "DE") rate = 4.99; else if (country === "FR") rate = 5.99; …</code>, where each branch just turns one value into another. That's really a table written as code. Put the table in an object or Map instead. Adding a country becomes a one-line change to the data, and there's exactly one place that decides what happens for a country that isn't listed, instead of a chain that quietly does nothing.</p>
   <div class="runner" data-ex="lookup" data-prompt="What happens on each call?"></div>
 
   <h3>Guard clauses</h3>
-  <p>Handle the bad cases first and return early. The main path then reads straight down, with no nesting, and each early return is one world you've dealt with and can stop thinking about.</p>
+  <p>A <strong>guard clause</strong> is an <code>if</code> at the top of a function that checks for a problem and returns straight away if it finds one. Put all of these first, then write the normal case below them. The alternative is <code>if</code>s nested inside <code>if</code>s, where it's hard to see which condition you're inside. With guard clauses, each problem is dealt with in one line, and below them you can stop thinking about it.</p>
   <div class="runner" data-ex="guards" data-prompt="Which message comes back?"></div>
 
   <h3>Pure functions and side effects</h3>
-  <p>A pure function's result depends only on its arguments, and it changes nothing outside itself. That makes it the easiest code to debug: run it with the failing input and you've reproduced the bug. A function that reads a variable from outside itself, or changes a container it was given, has a hidden extra input, which is the whole world. Keep the logic pure and push reading files, network calls and DOM updates to the edges. People call this "functional core, imperative shell."</p>
+  <p>A function is <strong>pure</strong> when two things are true. Its answer depends only on the inputs you pass in. And it doesn't change anything outside itself, which includes variables elsewhere, containers it was handed, the page and files. Any such outside change is called a <strong>side effect</strong>.</p>
+  <p>Why it matters: a pure function is the easiest code to debug. Call it with the input that failed and you've reproduced the bug, every time. A function that reads a variable from somewhere else has a hidden input: its answer can change because of code far away, as the example shows. Programs do need side effects (saving, loading, updating the page), so the advice is to keep your calculations pure and keep the side effects in a thin outer layer that calls them. Some people call this "functional core, imperative shell".</p>
   <div class="runner" data-ex="pure" data-prompt="What are the three printed prices?"></div>
 
   <h3>Make impossible states impossible</h3>
-  <p>A loading screen tracked with three booleans has 2 × 2 × 2 = 8 combinations. Only four make sense. The other four are bugs waiting for a code path to produce them. Toggle the flags and see.</p>
+  <p>Picture a search page that tracks what's happening with three true/false variables: <code>isLoading</code>, <code>hasError</code> and <code>hasData</code>. Three true/false values give 2 × 2 × 2 = 8 combinations, but only four of them describe a real situation. The other four are nonsense, like "loading and failed at the same time". Nothing in the code stops them from happening, so one day some sequence of clicks will produce one and the page will show something strange. Tick the boxes and see.</p>
   <div class="panel">
     <div class="bools">
       <div>
@@ -821,7 +838,7 @@ footer { color: var(--muted); font-size: var(--s-sm); padding-block: 1rem 0; }
       <table class="combos" id="combos"></table>
     </div>
   </div>
-  <p>Replace the flags with one <code>status</code> field that can only hold the states that exist. Data that belongs to a state lives inside it, so you can't have an error message without an error.</p>
+  <p>The fix is to replace the three variables with one <code>status</code> field that can hold only the four real situations. Any extra data belongs to its situation: the error message lives inside the error state, so you can't end up with an error message and no error.</p>
   <pre class="static" data-notes="statemachine">// 4 states, all of them valid
 { status: "idle" }
 { status: "loading" }
@@ -834,40 +851,41 @@ switch (state.status) {
   case "error":   return showError(state.message);
   case "success": return showResults(state.data);
 }</pre>
-  <p>This is a small <em>state machine</em>. Reach for one whenever you catch yourself adding a boolean to describe what phase something is in: forms, uploads, checkouts, connections, game rounds.</p>
+  <p>This is a small <strong>state machine</strong>: a fixed list of named situations (states), where the thing is always in exactly one of them. Use one whenever you catch yourself adding another true/false variable to describe what stage something is at. Forms, file uploads, checkouts, network connections and game rounds are typical cases.</p>
 
   <h3>Assertions and checking at the boundary</h3>
-  <p>An assertion is a counterfactual written as code: "suppose this weren't true; stop right here and say so." It moves the crash from three functions later to the exact place the assumption broke.</p>
+  <p>An <strong>assertion</strong> is a line that checks something you believe is always true and stops the program with a clear message if it isn't. It's a "what if this weren't true?" written into the code. Without it, a bad value travels on and causes trouble somewhere else (like the <code>NaN</code> in the bug lab). With it, the program stops at the exact line where your assumption broke and says which one.</p>
   <div class="runner" data-ex="assert" data-prompt="What prints, and where does it stop?"></div>
-  <p>The best place to check is where data enters your program: a form, an API response, a file. Convert it there into the shape the rest of the code expects, once. After that boundary, the inside of your program can trust its data. (In TypeScript, the same idea is "parse, don't validate," and libraries like Zod do it for you.)</p>
+  <p>The best place for these checks is the <strong>boundary</strong>: the point where data enters your program, such as a form, a reply from a server, or a file. Check and convert the data there, once, into exactly the shape the rest of your code expects. After that point, the rest of your program can trust its data instead of every function checking again. The bug lab's <code>quantity</code>/<code>qty</code> mix-up would have been caught here. (If you later use TypeScript, a version of JavaScript that checks types, libraries such as Zod do this checking and converting for you.)</p>
   <div class="runner" data-ex="boundary" data-prompt="What does each parsed item look like?"></div>
 
   <h3>Recursion for data that contains itself</h3>
-  <p>Use recursion when the data is a tree: folders in folders, comments with replies, nested menus, JSON. The function handles one node and calls itself for the children. For a flat list, use a loop.</p>
+  <p>A <strong>recursive</strong> function is one that calls itself. That sounds circular, but it fits data that contains smaller copies of itself, called a tree: folders inside folders, comments with replies to replies, menus with submenus. The function handles one item, then calls itself on each item inside it, and stops when an item has nothing inside. A loop can't easily do this, because you don't know in advance how deep the nesting goes. For a flat list, use a normal loop.</p>
   <div class="runner" data-ex="tree" data-prompt="How many comments are in the thread?"></div>
 
   <h3>Tests: counterfactuals you keep</h3>
-  <p>A test is a what-if you write down once and the computer checks forever. When choosing test inputs, run through this list. Each line is a world your code might meet:</p>
+  <p>A <strong>test</strong> is a small piece of code that calls your function with a chosen input and checks the answer, for example "<code>cartTotal</code> of an empty cart should be 0". You write it once and re-run it after every change, so a bug you fixed can't quietly come back. It's a "what if" you write down once and the computer checks forever. When choosing what to test, go through this list. Each line is a situation your code will meet sooner or later:</p>
   <ul>
     <li><strong>Empty:</strong> no items, empty string, zero</li>
-    <li><strong>One:</strong> a single item; loops with one pass hide off-by-one errors</li>
+    <li><strong>One:</strong> a single item. This catches "off-by-one" mistakes, where a loop runs one time too many or too few.</li>
     <li><strong>Many and duplicates:</strong> the same item twice</li>
     <li><strong>Missing or misspelled fields:</strong> <code>quantity</code> instead of <code>qty</code></li>
     <li><strong>Wrong type:</strong> <code>"8"</code> instead of <code>8</code>, <code>null</code></li>
     <li><strong>Boundaries:</strong> exactly 3 items when the discount starts at 3; negative numbers; very large numbers</li>
-    <li><strong>Text:</strong> spaces at the ends, capital letters, accents and emoji (<code>"İzmir".toLowerCase()</code> is a classic)</li>
+    <li><strong>Text:</strong> spaces at the ends, capital letters, accents and emoji. A classic: <code>"İzmir".toLowerCase()</code> doesn't give you <code>"izmir"</code>; the dot on the capital İ becomes an extra invisible character.</li>
   </ul>
 
   <h3>Architecture in five decisions</h3>
+  <p>"Architecture" just means how the parts of a program are organised and connected. These five decisions come up in every project.</p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Decision</th><th>Rule of thumb</th></tr></thead>
+      <thead><tr><th>Decision</th><th>Rule of thumb, and why</th></tr></thead>
       <tbody>
-        <tr><td>Where does this piece of state live?</td><td>One owner. Everyone else asks the owner or gets a copy. Two places holding "the" cart will disagree.</td></tr>
-        <tr><td>Should I make this reusable?</td><td>Write it plainly the first time and copy it the second. Extract a shared function the third time, when you can see what actually varies.</td></tr>
-        <tr><td>Class or plain object and functions?</td><td>Plain data plus functions by default. A class earns its place when it guards a rule about its own data, like a bank account that never goes negative.</td></tr>
-        <tr><td>Inheritance or composition?</td><td>Prefer composition: build things out of smaller parts you pass in. Deep inheritance chains make "which method runs?" a hard question.</td></tr>
-        <tr><td>How do I split the code into files?</td><td>By what changes together. UI, business rules and data access change for different reasons, so keep them apart.</td></tr>
+        <tr><td>Where does each piece of <em>state</em> live? (State is any data that changes while the app runs, like the cart contents or the logged-in user.)</td><td>Give it one owner: one place in the code that holds it and changes it. Everything else asks that owner or gets a copy. If two parts of the page each keep their own "cart", sooner or later they'll disagree.</td></tr>
+        <tr><td>Should I make this code reusable?</td><td>Write it plainly the first time. Copy it the second time. The third time, turn it into a shared function, because by then you can see which parts really change between uses. Making things reusable too early usually guesses wrong.</td></tr>
+        <tr><td>Class, or plain objects and functions?</td><td>A <em>class</em> is a template for objects that come with their own built-in functions. Default to plain objects and separate functions. Use a class when an object has a rule it must always protect, like a bank account whose balance must never go negative: the class can make sure every change goes through a check.</td></tr>
+        <tr><td>Inheritance or composition?</td><td><em>Inheritance</em> means one class takes over everything from another and adds to it (a <code>Manager</code> is an <code>Employee</code> plus extras). <em>Composition</em> means building something from smaller parts you plug in. Prefer composition. With long inheritance chains it gets hard to tell which version of a function will actually run.</td></tr>
+        <tr><td>How do I split code into files?</td><td>Keep together the code that changes together. Three things change for different reasons: what's shown on screen (the UI), your app's rules ("free shipping over €50"), and the code that loads and saves data. Keep them apart, so changing one doesn't break the others.</td></tr>
       </tbody>
     </table>
   </div>
@@ -878,10 +896,12 @@ switch (state.status) {
 <section class="chapter" id="concurrency" data-title="Concurrency and async">
   <p class="eyebrow">Chapter 7</p>
   <h2>Concurrency: debugging many histories</h2>
-  <p>Marshall calls concurrent code "counterfactual reasoning on steroids": instead of one history, there are many possible orderings, and the bug may live in one you've never seen. JavaScript runs one piece of code at a time, but it's still exposed: every <code>await</code>, timer and event is a point where other code can run and change the world before you continue.</p>
+  <p><strong>Concurrency</strong> means several tasks in progress at the same time: two requests to a server, two browser tabs saving the same document, two customers buying the last item in stock. Each task runs in small steps, and the steps of different tasks can interleave in many possible orders.</p>
+  <p>Marshall calls this "counterfactual reasoning on steroids". With one task there's one order of events to think through. With several, there are many, and the bug may only appear in an order you've never seen during testing.</p>
+  <p>JavaScript in a browser runs one piece of code at a time, but it isn't safe from this. Whenever your code waits, for a server reply (<code>await</code>), a timer, or a click, other code gets to run in the meantime and can change things before yours carries on.</p>
 
   <h3>The lost update</h3>
-  <p>Two tasks each add €10 to a balance of €100. Each one reads the balance, adds 10 to its own copy, then writes the copy back. You choose the order the steps run in. Can you get €120? Can you get something else?</p>
+  <p>Imagine two deposits of €10 into a bank account holding €100, arriving at the same moment from two devices. Each deposit is handled by its own task in three steps: read the balance into a private copy (<code>local</code>), add 10 to the copy, then write the copy back as the new balance. Both should finish with €120. Click the buttons to choose which task takes its next step. Can you get €120? Can you get something else?</p>
   <div class="panel">
     <div class="threads">
       <div class="thread" id="tA"></div>
@@ -900,25 +920,26 @@ switch (state.status) {
     </div>
     <div id="inter-all-out"></div>
   </div>
-  <p>That's the multiverse: twenty possible histories, and testing will mostly show you the lucky ones. Nobody checks all of them in their head. The practical answer is the "architectural restraint" from the article: design so that the dangerous orderings can't happen.</p>
+  <p>Two tasks of three steps each can interleave in twenty possible orders, and only two of them give the right answer. A test usually runs one task completely and then the other, which is one of the two lucky orders, so the test passes and the bug ships. Nobody checks all the orders in their head. What works is the "architectural restraint" from the article: design the program so the dangerous orders can't happen. The checkbox above shows the simplest version.</p>
 
   <h3>The same bug in a search box</h3>
-  <p>A user types "ca", then "cat". Two requests go out. The first is slow; the second is fast. The answers come back in the wrong order.</p>
+  <p>Many search boxes ask the server for results as you type. A user types "ca", then "cat", so two requests go out. The server happens to answer the first one slowly and the second one quickly, so the answers arrive in the opposite order to the typing. The example below fakes that delay with a timer.</p>
   <div class="runner" data-ex="stale" data-prompt="What does the screen show at the end?"></div>
-  <p>The fix: remember which request is the latest and ignore any answer that isn't. (In real code, <code>AbortController</code> can also cancel the old request.)</p>
+  <p>The fix: number each request, remember the newest number, and ignore any answer that doesn't belong to the newest request. (Browsers also have a built-in tool, <code>AbortController</code>, that cancels the old request entirely.)</p>
   <div class="runner" data-ex="stalefix" data-prompt="Now what does the screen show?"></div>
 
-  <h3>Restraint that removes orderings</h3>
+  <h3>Designs that rule out the dangerous orders</h3>
+  <p>Every bug in this chapter comes from the same thing: two tasks changing the same data with a gap between reading it and writing it. Each design below closes the gap or removes the sharing.</p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Technique</th><th>What it rules out</th></tr></thead>
+      <thead><tr><th>Design</th><th>How it helps, and where you'll meet it</th></tr></thead>
       <tbody>
-        <tr><td>Don't share changeable state</td><td>Give each piece of state one owner. Other tasks send it messages or requests instead of writing to it.</td></tr>
-        <tr><td>Immutable data</td><td>If nothing can change a value after it's made, nobody can see it half-changed.</td></tr>
-        <tr><td>Queues</td><td>Work goes into a queue and one worker takes it out in order. Many writers, one sequence.</td></tr>
-        <tr><td>Atomic operations and transactions</td><td>Read-change-write happens as one step. In SQL: <code>UPDATE accounts SET balance = balance + 10</code> instead of reading in app code and writing back.</td></tr>
-        <tr><td>Locks</td><td>Only one task at a time in a section. Effective but easy to get wrong (deadlocks), so prefer the options above.</td></tr>
-        <tr><td>Idempotent operations</td><td>Doing it twice has the same effect as once ("set status to paid" rather than "add a payment"), so retries and duplicates are harmless.</td></tr>
+        <tr><td>Don't share data that changes</td><td>Give each piece of changing data one owner. Other tasks ask the owner to make the change instead of changing it themselves, so all changes happen in one place, one at a time.</td></tr>
+        <tr><td>Data that can't be changed</td><td>If nothing can change a value after it's created, and you make new copies instead (as with <code>[...cart, item]</code> in Chapter 1), no task can ever see it half-changed. This is the reason React wants new copies.</td></tr>
+        <tr><td>Queues</td><td>Tasks put requests into a queue, and a single worker handles them in order, one at a time. Many tasks can add requests; only one acts on them. Email sending and payment processing usually work this way.</td></tr>
+        <tr><td>Do read-change-write in one step</td><td>Let something that can't be interrupted do all three steps at once. Databases can: in SQL, the language most databases use, <code>UPDATE accounts SET balance = balance + 10</code> does the whole deposit in one step, instead of your code reading the balance and writing it back later. Programmers call one-step operations <em>atomic</em>, from the Greek for "can't be cut".</td></tr>
+        <tr><td>Locks</td><td>A lock lets only one task at a time into a section of code; the others wait their turn. It works, but it's easy to get wrong. The classic failure is a <em>deadlock</em>: two tasks each waiting for a lock the other holds, forever. Prefer the designs above when you can.</td></tr>
+        <tr><td>Make operations safe to repeat</td><td>Networks fail, and apps often re-send a request that seemed to fail but actually got through. If the operation is "set this order's status to paid", doing it twice is harmless. If it's "add a payment of €50", doing it twice charges the customer twice. The technical term is <em>idempotent</em>.</td></tr>
       </tbody>
     </table>
   </div>
@@ -929,24 +950,24 @@ switch (state.status) {
 <section class="chapter" id="practice" data-title="Practice plan and sources">
   <p class="eyebrow">Chapter 8</p>
   <h2>Practice plan</h2>
-  <p>Counterfactual reasoning gets better with short, frequent practice, like any skill. Worked examples first, then exercises that fade the support: that's what the research above found works. A suggested four weeks, 30–45 minutes a day:</p>
+  <p>The "what if" reasoning this course teaches improves with short, frequent practice, like any skill. The research in Chapter 0 points to one order that works: study fully worked examples first, then move to exercises that give you less and less help. Here's a suggested four weeks at 30–45 minutes a day. Tick items off as you go.</p>
   <ul class="checklist" id="plan"></ul>
 
   <h3>Habits to keep after that</h3>
   <ul>
     <li>Before running any code you just wrote, say what it will print. Every surprise is a lesson about your model.</li>
-    <li>Before writing a function, write the data definition and two example inputs with their expected outputs.</li>
-    <li>When stuck on a bug for more than 15 minutes, stop and write the list of worlds on paper.</li>
+    <li>Before writing a function, write down what its input data looks like (its shape, Chapter 3) and two example inputs with the answers you expect. That gives you a target, and your first two tests.</li>
+    <li>When you've been stuck on a bug for more than 15 minutes, stop and write the list of possible explanations (worlds, Chapter 2) on paper.</li>
     <li>Keep a bug journal: symptom, cause, how you found it, how you'd find it faster. Patterns show up within a month.</li>
   </ul>
 
   <h3>Where to go next</h3>
   <ul class="sources">
-    <li><a href="https://htdp.org/" target="_blank" rel="noopener"><em>How to Design Programs</em></a> (Felleisen et al.), free online. The design recipe: data definition, examples, template, code, tests. The most direct cure for "I don't know where to start."</li>
-    <li><a href="https://www.debuggingbook.org/" target="_blank" rel="noopener"><em>The Debugging Book</em></a> (Zeller et al.), free and interactive, in Python. Scientific debugging and the tools that automate it.</li>
+    <li><a href="https://htdp.org/" target="_blank" rel="noopener"><em>How to Design Programs</em></a> (Felleisen et al.), free online. It teaches a "design recipe", a fixed series of steps for writing any function: describe the data, write examples, sketch the outline, fill in the code, test. It's the most direct cure for "I don't know where to start". It uses a teaching language called Racket, but the method works in any language.</li>
+    <li><a href="https://www.debuggingbook.org/" target="_blank" rel="noopener"><em>The Debugging Book</em></a> (Zeller et al.), free and interactive, in Python. The step-by-step debugging method from Chapter 2 in depth, plus tools that automate parts of it.</li>
     <li><a href="https://pythontutor.com/" target="_blank" rel="noopener">Python Tutor</a>. Draws the names-and-containers diagram for your own code, step by step.</li>
     <li><a href="https://exercism.org/" target="_blank" rel="noopener">Exercism</a>. Free exercises with human mentors who review your solutions.</li>
-    <li><a href="https://wizardzines.com/" target="_blank" rel="noopener">Julia Evans' zines</a>, including one on debugging. Short, friendly, practical.</li>
+    <li><a href="https://wizardzines.com/" target="_blank" rel="noopener">Julia Evans' zines</a>. Short illustrated booklets on programming topics, including one on debugging. Friendly and practical.</li>
   </ul>
 
   <h3>Research mentioned</h3>
@@ -1548,11 +1569,11 @@ $("#lab-code").textContent = cartTotal.toString() + "\n\n" +
   "cartTotal(cartB, coupon); // " + cartTotal(cartB, coupon) + "   (the bug)";
 
 const HYPS = [
-  { id: "h1", t: "A price is a string, like \"1.20\"", if: "Multiplying a string that looks like a number should give NaN. Test it: does \"1.20\" * 3 give NaN?" },
-  { id: "h2", t: "An item has no qty field", if: "item.qty would be undefined for that item, and 8 * undefined is NaN. Logging each item's subtotal would show NaN on one specific line." },
-  { id: "h3", t: "The coupon has no percent", if: "NaN would only appear with a coupon. Running the same cart without a coupon would give a normal number." },
-  { id: "h4", t: "The loop reads past the end of the array", if: "items[items.length] is undefined, and undefined.price throws a TypeError: \"Cannot read properties of undefined\". The symptom would be a crash, not NaN. Does that match the report?" },
-  { id: "h5", t: "The rounding creates NaN", if: "Math.round would have to return NaN for a normal number. Test it on 12.6." },
+  { id: "h1", t: "A price is a string, like \"1.20\"", if: "Then multiplying text that looks like a number would have to give NaN. You can test that directly: does \"1.20\" * 3 give NaN?" },
+  { id: "h2", t: "An item has no qty field", if: "Then item.qty would be undefined (no value) for that item, and 8 * undefined is NaN. Printing each item's price × qty would show NaN on one specific item."  },
+  { id: "h3", t: "The coupon has no percent", if: "Then NaN would only appear when a coupon is used. Running the same cart without a coupon would give a normal number." },
+  { id: "h4", t: "The loop reads past the end of the array", if: "Then the loop would reach a position with no item, and asking for .price of nothing makes JavaScript stop with an error: \"TypeError: Cannot read properties of undefined\". The customer would see a crash, not NaN. Does that match the report? Notice you can rule this world out just by comparing what it predicts with the symptom." },
+  { id: "h5", t: "The rounding creates NaN", if: "Then Math.round (JavaScript's rounding function) would have to turn a normal number into NaN. Test it on 12.6." },
 ];
 const labState = store.get("lab", { ruled: [], log: [] });
 const hypBox = $("#hyps");
@@ -1571,13 +1592,13 @@ HYPS.forEach(hy => {
 const EXPS = [
   { t: "Run both carts with no coupon", run: () => "cartTotal(cartA, null) → " + cartTotal(cartA, null) + "\ncartTotal(cartB, null) → " + cartTotal(cartB, null),
     means: "Cart B is NaN even without a coupon, so the coupon isn't needed for the bug. That rules out \"the coupon has no percent\"." },
-  { t: "Log each item's subtotal (price × qty) in cart B", run: () => cartB.map(it => it.name + ": " + fmt(it.price * it.qty)).join("\n"),
+  { t: "Print price × qty for each item in cart B", run: () => cartB.map(it => it.name + ": " + fmt(it.price * it.qty)).join("\n"),
     means: "The Notebook line is fine; the Mug line is NaN. The problem is in one item, not the loop or the rounding." },
   { t: "Compute \"1.20\" * 3 on its own", run: () => "\"1.20\" * 3 → " + ("1.20" * 3),
-    means: "Multiplication converts the string to a number, so a string price doesn't make NaN. (It's still a smell: \"1.20\" + 3 would give \"1.203\".) Cart A also has a string price and works." },
+    means: "Multiplication converts the text to a number first, so a price stored as text doesn't cause NaN, and cart A has one and works fine. (It's still risky: \"1.20\" + 3 joins them as text and gives \"1.203\".)" },
   { t: "Compute Math.round on a normal number", run: () => "Math.round(12.6 * 100) / 100 → " + Math.round(12.6 * 100) / 100 + "\nMath.round(NaN) → " + Math.round(NaN),
     means: "Rounding only returns NaN when it's given NaN. It passes the bug along but doesn't create it." },
-  { t: "Log typeof price and qty for each item in cart B", run: () => cartB.map(it => it.name + ": price " + typeof it.price + ", qty " + typeof it.qty).join("\n"),
+  { t: "Print the type (number, text…) of price and qty for each item in cart B", run: () => cartB.map(it => it.name + ": price " + typeof it.price + ", qty " + typeof it.qty).join("\n"),
     means: "The Mug's qty is undefined. Something is wrong with how that item stores its quantity." },
   { t: "Print the Mug item exactly as it is", run: () => fmt(cartB[1], 0, false),
     means: "There it is: the Mug has quantity, not qty. Whatever code added it to the cart used a different field name." },
@@ -1598,9 +1619,9 @@ $("#conclude").addEventListener("click", () => {
     "": ["bad", "Pick the hypothesis your evidence leaves standing."],
     h1: ["bad", "Cart A has a string price and works, and \"1.20\" * 3 is a number. Try the experiment that tests it."],
     h3: ["bad", "Run cart B without a coupon. Does the NaN go away?"],
-    h4: ["bad", "Open \"If this were true…\" for this one. What symptom would that world produce?"],
+    h4: ["bad", "Open \"If this were true…\" for this one. What would the customer see if it were the real explanation, and is that what they reported?"],
     h5: ["bad", "Math.round only returns NaN when it's given NaN. Where did the first NaN come from?"],
-    h2: ["good", "Right. The Mug item uses quantity instead of qty, so item.qty is undefined and 8 * undefined is NaN. Notice how you got here: five worlds, a few cheap checks, one survivor. The fix isn't to patch cartTotal. It's to make sure every item has the same shape where items enter the program. Chapter 3 and the \"checking at the boundary\" section in Chapter 6 show how."],
+    h2: ["good", "Right. The Mug item uses quantity instead of qty, so item.qty is undefined and 8 * undefined is NaN. Notice how you got here: five possible explanations, a few quick checks, one left standing. The real fix isn't to patch cartTotal to accept both names. It's to find the code that added the Mug, and to check every item's shape at the point where items enter the program. Chapter 3 and the \"checking at the boundary\" section of Chapter 6 show how."],
   };
   const [cls, text] = msgs[v];
   fb.replaceChildren(h("div", { class: "feedback " + cls }, text));
@@ -1653,46 +1674,46 @@ renderPipe();
 /* ---------- field guide ---------- */
 const GUIDE = [
   { n: "Object / record", q: "One thing with named parts.", pic: '<span>name: "Ada"</span><span>age: 36</span><span>email: …</span>',
-    fast: "Reading a field by name", slow: "Nothing, for a few fields. It's not meant for growing collections.",
-    js: '{ name: "Ada", age: 36 }', py: '{"name": "Ada"} or a dataclass',
-    use: "A user, an order, a settings object, one row of data.", smell: "Keys that are data, like user IDs. That's a collection: use a Map." },
-  { n: "Tuple", q: "A small fixed group where position is the meaning.", pic: "<span>41.0</span><span>28.9</span>",
-    fast: "Unpacking: const [lat, lng] = point", slow: "Readability, once it has more than 2–3 parts",
-    js: "[x, y]  (an array by convention)", py: "(x, y), immutable and usable as a dict key",
-    use: "Coordinates, returning two values, key–value pairs from Object.entries.", smell: "You keep checking which index means what. Name the fields with an object." },
+    fast: "Reading or changing a part by its name: user.email", slow: "Not designed for long, growing lists of things",
+    js: '{ name: "Ada", age: 36 }', py: '{"name": "Ada"}, or a class',
+    use: "A user, an order, a product, a settings panel, one row from a spreadsheet.", smell: "You're adding keys that are really data, like user IDs (users[\"u42\"] = …). That's a collection of many things: use a Map." },
+  { n: "Tuple", q: "A short, fixed-length group where each position has a meaning.", pic: "<span>41.0</span><span>28.9</span>",
+    fast: "Unpacking into names in one line: const [lat, lng] = point", slow: "Being read: past 2–3 values, nobody remembers which position means what",
+    js: "[x, y], a short array used this way", py: "(x, y), a real tuple; it can't be changed and can be a dict key",
+    use: "Coordinates, a function that returns two values, the [key, value] pairs from Object.entries(obj).", smell: "You keep looking up which position means what. Switch to an object with named fields." },
   { n: "Array / list", q: "Many things of the same kind, in order.", pic: "<span>0: msg</span><span>1: msg</span><span>2: msg</span><i>…</i>",
-    fast: "Item by position, adding at the end, looping in order", slow: "Finding by value, \"is X in here?\", inserting at the front",
+    fast: "Getting the item at a position, adding at the end, going through items in order", slow: "Finding an item by its value or ID, asking \"is X in here?\", adding at the front",
     js: "[a, b, c]", py: "[a, b, c]",
-    use: "Feeds, search results, rows to render, anything you show in order.", smell: "Calling .find(x => x.id === id) inside a loop. Build a Map by ID once." },
-  { n: "Map / dictionary", q: "Look things up by a key.", pic: '<span>"u42" → Ada</span><span>"u7" → Ben</span>',
-    fast: "Get, set, delete and check by key", slow: "Anything by position; finding by value instead of by key",
-    js: "new Map(), or a plain object for string keys", py: "dict",
-    use: "Users by ID, counts per word, caches, groups by category.", smell: "Two maps with the same keys kept in sync. Store one map of records." },
-  { n: "Set", q: "Is it in there? No duplicates.", pic: "<span>js</span><span>css</span><span>html</span>",
-    fast: "Add, delete, \"has X?\", removing duplicates", slow: "Getting the nth item (there's no position)",
+    use: "Anything you show in order: feeds, search results, cart items, table rows.", smell: "Searching the array by ID (.find(x => x.id === id)) inside another loop. Build a Map from ID to item once instead." },
+  { n: "Map / dictionary", q: "Look things up by a key (a name or an ID).", pic: '<span>"u42" → Ada</span><span>"u7" → Ben</span>',
+    fast: "Adding, finding, changing and removing an entry by its key", slow: "Anything by position; finding an entry by its value instead of its key",
+    js: "new Map(), or a plain object if keys are text", py: "dict (a dictionary)",
+    use: "Users by ID, how many times each word appears, saved results (a cache), items grouped by category.", smell: "Two Maps with the same keys that you must keep in step. Use one Map whose values are records." },
+  { n: "Set", q: "Is it in there? No duplicates allowed.", pic: "<span>js</span><span>css</span><span>html</span>",
+    fast: "Adding, removing, asking \"is X in here?\", removing duplicates from a list", slow: "Getting \"the third item\": a Set has no positions",
     js: "new Set([...])", py: "set()",
-    use: "Tags, selected checkboxes, visited pages, unique emails.", smell: "An array plus .includes() before every .push() to avoid duplicates." },
-  { n: "Stack", q: "Last in, first out.", pic: "<span>bottom</span><span>…</span><span>top ⇅</span>",
-    fast: "Push on top, pop from top", slow: "Reaching anything below the top",
-    js: "array.push() / array.pop()", py: "list.append() / list.pop()",
-    use: "Undo, back button, matching brackets, walking nested structures.", smell: "Taking from the bottom. You wanted a queue." },
-  { n: "Queue", q: "First in, first out.", pic: "<span>⇠ out</span><span>…</span><span>in ⇠</span>",
-    fast: "Add at the back, take from the front (with a real queue)", slow: "array.shift() on big arrays: it moves every item",
-    js: "array.push() / array.shift() for small queues", py: "collections.deque",
-    use: "Job and email queues, print queues, breadth-first search, rate limiting.", smell: "Using a queue when the most urgent item should go first. That's a priority queue (heap)." },
+    use: "Tags, ticked checkboxes, pages already visited, a list of emails with no repeats.", smell: "An array where you check includes() before every push() to avoid duplicates." },
+  { n: "Stack", q: "Last in, first out, like a stack of plates.", pic: "<span>bottom</span><span>…</span><span>top ⇅</span>",
+    fast: "Adding to the top (push) and taking from the top (pop)", slow: "Reaching anything below the top",
+    js: "array.push() and array.pop()", py: "list.append() and list.pop()",
+    use: "Undo, the browser's back button, checking that brackets match, walking through nested data.", smell: "You keep taking items from the bottom. You wanted a queue." },
+  { n: "Queue", q: "First in, first out, like a line at a shop.", pic: "<span>⇠ out</span><span>…</span><span>in ⇠</span>",
+    fast: "Adding at the back, taking from the front (with a proper queue)", slow: "array.shift() on a big array, because it moves every remaining item along",
+    js: "array.push() and array.shift(), fine for small queues", py: "collections.deque, a proper queue",
+    use: "Emails or jobs waiting to be processed, print jobs, limiting how many requests are sent per second.", smell: "The most urgent item should go first, not the oldest. That's a priority queue (see the Chapter 4 helper)." },
   { n: "Tree", q: "Things that contain smaller things of the same kind.", pic: "<span>root</span><i>→</i><span>child</span><span>child</span><i>→</i><span>…</span>",
-    fast: "Walking parent to children, recursion", slow: "Finding a node with no index; moving subtrees around",
+    fast: "Going from an item to the items inside it, using a function that calls itself (Chapter 6)", slow: "Finding one item deep inside without keeping a separate index",
     js: "{ value, children: [ … ] }", py: "the same, with dicts or classes",
-    use: "Comment threads, folders, menus, the DOM, org charts, JSON.", smell: "Flattening a tree into an array and then rebuilding the nesting by hand." },
-  { n: "Graph", q: "Things connected to any other things.", pic: "<span>ada</span><i>↔</i><span>ben</span><i>→</i><span>can</span><i>↺</i>",
-    fast: "\"Who is connected to X?\" when stored as a Map of Sets", slow: "Questions about paths without a proper algorithm (BFS, Dijkstra)",
-    js: "new Map([[\"ada\", new Set([\"ben\"])]])", py: "dict of sets, or networkx",
-    use: "Social follows, routes, dependencies between tasks, recommendations.", smell: "Going round in circles forever. Graphs can loop: track visited nodes in a Set." },
+    use: "Comment threads, folders, menus with submenus, the page's HTML elements, JSON from a server.", smell: "Flattening the tree into a list, then writing code to rebuild the nesting by hand." },
+  { n: "Graph", q: "Things that can be connected to any other things.", pic: "<span>ada</span><i>↔</i><span>ben</span><i>→</i><span>can</span><i>↺</i>",
+    fast: "\"Who is X connected to?\", when stored as a Map from each item to a Set of its connections", slow: "Path questions (\"what's the shortest route?\") unless you use a known method for them",
+    js: "new Map([[\"ada\", new Set([\"ben\"])]])", py: "a dict of sets, or the networkx library",
+    use: "Who follows whom, routes between places, which tasks must finish before others start, recommendations.", smell: "Your code goes round in circles forever. Graphs can loop back on themselves, so keep a Set of items already visited." },
 ];
 $("#guide").append(...GUIDE.map(g => h("article", { class: "card" },
   h("h4", {}, g.n), h("p", { class: "q" }, g.q), h("div", { class: "pic", html: g.pic, "aria-hidden": "true" }),
   h("dl", {}, h("dt", {}, "Fast"), h("dd", {}, g.fast), h("dt", {}, "Slow"), h("dd", {}, g.slow),
-    h("dt", {}, "Use for"), h("dd", {}, g.use), h("dt", {}, "Smell"), h("dd", {}, g.smell)),
+    h("dt", {}, "Use for"), h("dd", {}, g.use), h("dt", {}, "Warning sign"), h("dd", {}, g.smell)),
   h("pre", {}, "JS:     " + g.js + "\nPython: " + g.py))));
 
 /* ---------- membership race ---------- */
@@ -1756,7 +1777,7 @@ $("#parsons-check").addEventListener("click", () => {
   if (marks.every(Boolean)) {
     const out = h("pre", { class: "output" });
     runCode(EX.wordcount, sourceOf(EX.wordcount), out);
-    fb.replaceChildren(h("div", { class: "feedback good" }, "Correct. Here it is running on \"the cat saw the other cat\". Notice the shape: a Map because you look words up by key, and (counts.get(word) ?? 0) + 1 to handle the first time a word appears."), out);
+    fb.replaceChildren(h("div", { class: "feedback good" }, "Correct. Here it is running on \"the cat saw the other cat\". Notice the shape: a Map, because each word is looked up by name, and (counts.get(word) ?? 0) + 1, which handles a word seen for the first time (no count yet, so start from 0)."), out);
   } else {
     fb.replaceChildren(h("div", { class: "feedback bad" }, marks.filter(Boolean).length + " of " + marks.length + " lines are in the right place (green). Hint: a variable must exist before the loop that uses it."));
   }
@@ -1778,7 +1799,7 @@ const WIZ = {
   ] },
   coll: { q: "What will you do with it most often?", o: [
     ["Show or process the items in order", "render a list, go through each one", "order"],
-    ["Find one item by a unique ID, name or key", "get the product with this SKU", "R:map"],
+    ["Find one item by a unique ID, name or key", "get the product with this product code", "R:map"],
     ["Ask \"is this in there?\", or keep items unique", "already liked? tags without duplicates", "R:set"],
     ["Take items out in a particular order as you work", "undo, a job queue, most urgent first", "proc"],
     ["Count or group things by some key", "orders per customer, words per frequency", "R:groupmap"],
@@ -1790,22 +1811,22 @@ const WIZ = {
   proc: { q: "Which item should come out next?", o: [
     ["The newest one (last in, first out)", "undo, back button, nested brackets", "R:stack"],
     ["The oldest one (first in, first out)", "emails to send, print jobs, chat messages to process", "R:queue"],
-    ["The most important one", "task scheduler, top 10 scores, shortest route next", "R:heap"],
+    ["The most important one", "the most urgent task first, a top-10 scores list", "R:heap"],
   ] },
 };
 const RESULTS = {
-  record: { n: "Object / record", why: "Each field has a name, so code reads like the domain: order.total rather than order[3].", code: 'const order = { id: "A-1009", customer: "u42", total: 58.96, status: "paid" };', pit: "If you start adding keys like order[userId], you've switched to a collection. Use a Map for that part." },
-  tuple: { n: "Tuple (short array)", why: "Two values that travel together for a moment don't need names, and destructuring keeps the code short.", code: "function minMax(nums) { return [Math.min(...nums), Math.max(...nums)]; }\nconst [lo, hi] = minMax([3, 9, 4]);", pit: "If it lives longer than one line or anyone could swap the order, switch to { min, max }." },
-  array: { n: "Array of objects", why: "Arrays keep order and are made for looping, filtering, sorting and rendering.", code: "const messages = [\n  { id: 1, from: \"ada\", text: \"hi\" },\n  { id: 2, from: \"ben\", text: \"hello\" },\n];\nmessages.filter(m => m.from === \"ada\");", pit: "Searching it by ID inside another loop. That's the moment to add a Map." },
-  arraymap: { n: "Array plus a Map index", why: "Keep the array for order and build a Map from ID to the same objects for instant lookup. Both point at the same objects, so there's no copying.", code: "const products = await loadProducts();          // array, in display order\nconst byId = new Map(products.map(p => [p.id, p])); // index\nbyId.get(\"sku-42\");", pit: "Remember to update both when adding or removing. Wrap that in one function so they can't drift apart." },
-  map: { n: "Map (dictionary)", why: "Lookup by key takes the same time whether there are 10 entries or 10 million.", code: "const usersById = new Map();\nusersById.set(\"u42\", { name: \"Ada\" });\nusersById.get(\"u42\");", pit: "Keys are compared by identity for objects and arrays. Use strings or numbers as keys, like \"2,3\" for a coordinate." },
-  set: { n: "Set", why: "A Set answers \"is X in here?\" instantly and can't hold duplicates, so there's nothing to check by hand.", code: "const liked = new Set();\nliked.add(\"post-7\");\nliked.has(\"post-7\"); // true\n[...new Set(emails)]; // de-duplicate an array", pit: "Sets have no position. If you also need order or extra data per item, use a Map." },
-  groupmap: { n: "Map from key to count or array", why: "Grouping is a lookup by key, repeated. The Map's values hold the count or the list for each key.", code: "const counts = new Map();\nfor (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);", pit: "Forgetting the first-time case. That's what the ?? 0 or the has() check is for." },
-  stack: { n: "Stack", why: "The last thing you did is the first thing you undo. push and pop at the end of an array are instant.", code: "const undo = [];\nundo.push(action);\nconst last = undo.pop();", pit: "For undo with redo, use two stacks: pop from undo, push onto redo." },
-  queue: { n: "Queue", why: "Work is handled in the order it arrived, which is fair and predictable.", code: "const jobs = [];\njobs.push(\"email ada\");   // enqueue\nconst next = jobs.shift(); // dequeue", pit: "array.shift() moves every remaining item. Fine for hundreds; for big or fast queues use a real queue (a library, or Python's deque)." },
-  heap: { n: "Priority queue (heap)", why: "A heap always hands you the most important item next without sorting everything each time.", code: "// Small data: just sort\ntasks.sort((a, b) => b.priority - a.priority);\nconst next = tasks.shift();\n// Large or constantly changing data: use a heap library", pit: "Re-sorting a huge array on every insert. That's the job a heap does efficiently." },
-  tree: { n: "Tree", why: "Each node holds its own children, so the data matches how people think about it, and recursion walks it naturally.", code: "const folder = { name: \"src\", children: [\n  { name: \"app.js\", children: [] },\n  { name: \"lib\", children: [ /* … */ ] },\n] };", pit: "Very deep trees can overflow the call stack with recursion. Use an explicit stack for those." },
-  graph: { n: "Graph (Map of Sets)", why: "Each node lists who it connects to. \"Who does Ada follow?\" is a single lookup.", code: "const follows = new Map([\n  [\"ada\", new Set([\"ben\", \"can\"])],\n  [\"ben\", new Set([\"ada\"])],\n]);", pit: "Graphs can have cycles. Any walk needs a Set of visited nodes or it may never stop." },
+  record: { n: "Object / record", why: "Each part has a name, so the code reads like a description of the real thing: order.total instead of order[3].", code: 'const order = { id: "A-1009", customer: "u42", total: 58.96, status: "paid" };', pit: "If you start adding keys that are really data, like order[userId], that part has become a collection of many things. Use a Map for it." },
+  tuple: { n: "Tuple (a short array)", why: "Two values that belong together for a moment don't need names, and unpacking them into two variables in one line keeps the code short.", code: "function minMax(nums) { return [Math.min(...nums), Math.max(...nums)]; }\nconst [lo, hi] = minMax([3, 9, 4]); // lo is 3, hi is 9", pit: "If the pair is passed around a lot, or someone could mix up the order, switch to an object: { min, max }." },
+  array: { n: "Array of objects", why: "Arrays keep things in order and come with built-in functions for going through, filtering and sorting them, which is most of what you do with a list on screen.", code: "const messages = [\n  { id: 1, from: \"ada\", text: \"hi\" },\n  { id: 2, from: \"ben\", text: \"hello\" },\n];\nmessages.filter(m => m.from === \"ada\"); // only Ada's messages", pit: "Searching it by ID inside another loop. That's the moment to add a Map from ID to item." },
+  arraymap: { n: "Array plus a Map for lookups", why: "Keep the array for the order, and build a Map from each ID to the same object for instant lookup. Both hold links to the same objects (Chapter 1), so nothing is copied.", code: "const products = await loadProducts();             // array, in display order\nconst byId = new Map(products.map(p => [p.id, p])); // ID → product\nbyId.get(\"sku-42\");", pit: "When you add or remove a product, you must update both. Do it inside one function so they can't drift apart." },
+  map: { n: "Map (dictionary)", why: "Finding an entry by its key takes the same time whether there are 10 entries or 10 million, because the Map jumps straight to it instead of checking each one.", code: "const usersById = new Map();\nusersById.set(\"u42\", { name: \"Ada\" });\nusersById.get(\"u42\"); // { name: \"Ada\" }", pit: "An array or object used as a key only matches that exact container (Chapter 3). Use text or numbers as keys, such as \"2,3\" for a grid position." },
+  set: { n: "Set", why: "A Set answers \"is X in here?\" instantly and can't hold duplicates, so there's nothing to check by hand.", code: "const liked = new Set();\nliked.add(\"post-7\");\nliked.has(\"post-7\"); // true\n[...new Set(emails)]; // the emails array without repeats", pit: "A Set has no positions and stores no extra information per item. If you need either, use a Map." },
+  groupmap: { n: "Map from key to a count or a list", why: "Grouping is the same lookup over and over: for each item, find its group by key and add to it. A Map makes each lookup instant.", code: "const counts = new Map();\nfor (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);", pit: "Forgetting the first time a key appears, when there's no count yet. That's what ?? 0 handles." },
+  stack: { n: "Stack", why: "The last thing you did is the first thing you undo. Adding and removing at the end of an array is instant, so an array works as a stack.", code: "const undo = [];\nundo.push(action);       // remember an action\nconst last = undo.pop(); // take back the newest one", pit: "For undo plus redo, use two stacks: take from undo, put onto redo." },
+  queue: { n: "Queue", why: "Work is handled in the order it arrived, which is fair and predictable.", code: "const jobs = [];\njobs.push(\"email ada\");   // join the back of the line\nconst next = jobs.shift(); // take from the front", pit: "array.shift() moves every remaining item along by one. That's fine for hundreds of items; for large or busy queues use a proper queue (a library in JavaScript, collections.deque in Python)." },
+  heap: { n: "Priority queue", why: "A priority queue always gives you the most important item next. Computer scientists usually build one from a structure called a heap, which keeps the most important item on top without sorting everything each time.", code: "// Small data: sorting is fine\ntasks.sort((a, b) => b.priority - a.priority); // highest first\nconst next = tasks.shift();\n// Large or constantly changing data: use a priority-queue library", pit: "Re-sorting a huge array every time one item is added. That repeated work is what a heap avoids." },
+  tree: { n: "Tree", why: "Each item holds the items inside it, so the data matches how people picture it, and a function that calls itself (Chapter 6) handles any depth of nesting.", code: "const folder = { name: \"src\", children: [\n  { name: \"app.js\", children: [] },\n  { name: \"lib\", children: [ /* … */ ] },\n] };", pit: "For extremely deep nesting (thousands of levels), a function calling itself can run out of memory. That's rare in everyday data like comments and menus." },
+  graph: { n: "Graph (a Map of Sets)", why: "Each item keeps a Set of the items it's connected to, so \"who does Ada follow?\" is a single lookup.", code: "const follows = new Map([\n  [\"ada\", new Set([\"ben\", \"can\"])],\n  [\"ben\", new Set([\"ada\"])],\n]);", pit: "Connections can loop back (Ada follows Ben, Ben follows Ada). Code that walks from item to item needs a Set of items already visited, or it may never stop." },
 };
 let wizPath = ["start"];
 let wizCrumbs = [];
@@ -1831,37 +1852,37 @@ renderWiz();
 /* ---------- drills ---------- */
 const DRILLS = [
   { q: "A user looks at their profile, so the server needs that user's data from a few million users by ID, on every request.", o: ["Array", "Map", "Set", "Queue"], a: 1,
-    why: "Lookup by a unique key is exactly what a Map (or a database index, which is the same idea on disk) is for. Searching an array would scan millions of entries per request.", code: "usersById.get(req.userId)" },
+    why: "Finding one thing by a unique key is exactly what a Map is for. An array would have to be searched through millions of entries on every page load. (In a real app the users live in a database, which uses the same idea, called an index.)", code: "usersById.get(userId)" },
   { q: "A blog post's tags. Adding \"css\" twice should still leave one \"css\".", o: ["Array", "Set", "Stack", "Tuple"], a: 1,
-    why: "Uniqueness comes free with a Set. With an array you'd have to check includes() before every push, and someone will forget.", code: "post.tags = new Set([\"css\", \"html\"]);\npost.tags.add(\"css\"); // still 2" },
+    why: "A Set refuses duplicates by itself. With an array you'd have to check includes() before every push(), and sooner or later someone forgets.", code: "post.tags = new Set([\"css\", \"html\"]);\npost.tags.add(\"css\"); // still 2" },
   { q: "Undo in a drawing app: Ctrl+Z reverses the most recent action first.", o: ["Queue", "Stack", "Set", "Map"], a: 1,
-    why: "Last in, first out. Each action is pushed; undo pops the top. Add a second stack for redo.", code: "undo.push(action); const last = undo.pop(); redo.push(last);" },
+    why: "Last in, first out: the newest action is undone first. Each action is added to the top (push); undo takes from the top (pop). Add a second stack for redo.", code: "undo.push(action); const last = undo.pop(); redo.push(last);" },
   { q: "A newsletter service sends emails in the order people signed up.", o: ["Stack", "Queue", "Tree", "Set"], a: 1,
-    why: "First in, first out is a queue. Real systems use a durable queue (Redis, SQS, RabbitMQ) so jobs survive a crash.", code: "jobs.push(signup);  // later: const next = jobs.shift();" },
+    why: "First in, first out is a queue. Real systems keep the queue in a separate service rather than an array in memory, so waiting emails aren't lost if the server restarts.", code: "jobs.push(signup);  // later: const next = jobs.shift();" },
   { q: "A comment section where any comment can have replies, and replies can have replies.", o: ["Array", "Tree", "Graph", "Map"], a: 1,
-    why: "Comments contain comments of the same kind, so it's a tree, and rendering it is naturally recursive. (In a database it's often stored flat with a parentId and rebuilt into a tree for display.)", code: "{ text, replies: [ { text, replies: [] } ] }" },
+    why: "Comments contain comments of the same kind, so it's a tree, and a function that calls itself (Chapter 6) can display any depth of replies. (Databases often store comments as a flat list where each one records the ID of the comment it replies to, then the app rebuilds the tree for display.)", code: "{ text, replies: [ { text, replies: [] } ] }" },
   { q: "A social app suggests \"people your friends follow\".", o: ["Tree", "Graph", "Queue", "Tuple"], a: 1,
-    why: "Follows connect anyone to anyone and can loop back, so it's a graph. A Map from user to a Set of followed users makes \"friends of friends\" two quick lookups.", code: "for (const f of follows.get(me)) for (const ff of follows.get(f)) …" },
+    why: "Anyone can follow anyone, and follows can loop back, so it's a graph. Store it as a Map from each user to a Set of the users they follow. Then \"people my friends follow\" is two rounds of quick lookups.", code: "for (const f of follows.get(me)) for (const ff of follows.get(f)) …" },
   { q: "Count how many times each word appears in a document.", o: ["Array", "Set", "Map", "Stack"], a: 2,
     why: "Word to count is a key-to-value lookup that you update over and over. A Set would lose the counts; an array would need a search for every word.", code: "counts.set(w, (counts.get(w) ?? 0) + 1)" },
   { q: "A function needs to return both the smallest and the largest value of a list.", o: ["Tuple", "Map", "Set", "Queue"], a: 0,
-    why: "Two values that belong together for a moment: a tuple ([min, max]) with destructuring is clear and short. An object { min, max } is just as good and safer if the result travels far.", code: "const [lo, hi] = minMax(nums);" },
+    why: "Two values that belong together only for a moment: returning [min, max] and unpacking it with const [lo, hi] = … is clear and short. An object { min, max } is just as good, and safer if the result gets passed around.", code: "const [lo, hi] = minMax(nums);" },
   { q: "A store location to show on a map: latitude and longitude.", o: ["Tuple [lat, lng]", "Object { lat, lng }", "Set", "Array of strings"], a: 1,
-    why: "Both work, but libraries disagree about the order ([lat, lng] in Leaflet, [lng, lat] in GeoJSON). Named fields can't be swapped by accident. Convert to a tuple only at the moment a library wants one.", code: "const shop = { lat: 38.42, lng: 27.14 };" },
+    why: "Both work, but map tools disagree about the order: Leaflet wants [lat, lng], GeoJSON uses [lng, lat]. Named fields can't be swapped by accident. Convert to an array only at the moment a tool asks for one.", code: "const shop = { lat: 38.42, lng: 27.14 };" },
   { q: "App settings: theme, language, font size. The fields are known in advance.", o: ["Map", "Object / record", "Array", "Set"], a: 1,
     why: "A fixed set of named fields is a record. Use a Map when the keys are data you don't know ahead of time, like user IDs.", code: "const settings = { theme: \"dark\", language: \"tr\", fontSize: 16 };" },
   { q: "A sign-up form must tell you instantly whether a username is taken, checking against 50,000 names held in memory.", o: ["Array with includes()", "Set", "Stack", "Sorted array"], a: 1,
-    why: "\"Is it in there?\" is the Set's job. If you also need data about each user, use a Map keyed by username. (In real life the database's unique index does this.)", code: "taken.has(name.toLowerCase())" },
+    why: "\"Is it in there?\" is the Set's job, and it answers instantly. If you also need details about each user, use a Map keyed by username. (In a real app, the database checks this for you.)", code: "taken.has(name.toLowerCase())" },
   { q: "Browser back and forward buttons.", o: ["One queue", "Two stacks", "A Set", "A tree"], a: 1,
-    why: "Back pops from the back stack and pushes onto the forward stack. Visiting a new page clears forward. Same shape as undo and redo.", code: "forward.push(current); current = back.pop();" },
+    why: "Back takes the newest page off the back stack and puts the current page on the forward stack. Visiting a new page empties the forward stack. Same shape as undo and redo.", code: "forward.push(current); current = back.pop();" },
   { q: "A tic-tac-toe or chess board.", o: ["2D array (array of rows)", "Set", "Queue", "Graph"], a: 0,
-    why: "A grid with fixed rows and columns is an array of arrays: board[row][col]. Position is the meaning.", code: "const board = [[\"X\", \"\", \"O\"], [\"\", \"X\", \"\"], [\"\", \"\", \"O\"]];" },
+    why: "A grid with fixed rows and columns is an array of rows, where each row is an array of squares: board[row][col]. The position is the meaning.", code: "const board = [[\"X\", \"\", \"O\"], [\"\", \"X\", \"\"], [\"\", \"\", \"O\"]];" },
   { q: "Cache the results of a slow price calculation, keyed by product ID and country.", o: ["Array", "Map with a string key", "Set", "Stack"], a: 1,
-    why: "A cache is a lookup by input. Combine the parts into one string key, because a Map compares array keys by identity, not contents.", code: "const key = productId + \"|\" + country;\nif (!cache.has(key)) cache.set(key, slowPrice(productId, country));" },
+    why: "A cache stores answers you already worked out, so you can look them up instead of recalculating. That's a lookup by input, so it's a Map. Join the two parts into one text key, because an array key would only match that exact array (Chapter 3).", code: "const key = productId + \"|\" + country;\nif (!cache.has(key)) cache.set(key, slowPrice(productId, country));" },
   { q: "A maze solver needs to remember which cells it has already visited.", o: ["Array of [x, y] arrays", "Set of \"x,y\" strings", "Stack of booleans", "Object with arrays as keys"], a: 1,
-    why: "\"Have I been here?\" is a Set question. Strings like \"3,4\" compare by content, unlike [3, 4]. An array of arrays would also need a full scan for each check.", code: "visited.add(x + \",\" + y); visited.has(x + \",\" + y);" },
-  { q: "A live leaderboard that always shows the top 10 of a constantly changing set of scores.", o: ["Unsorted array", "Priority queue / heap or sorted structure", "Set", "Stack"], a: 1,
-    why: "\"Most important first\" is a priority queue. For a few hundred players, sorting an array is fine. At scale, a heap or a database index (or Redis sorted sets) avoids re-sorting everything.", code: "players.sort((a, b) => b.score - a.score).slice(0, 10) // fine when small" },
+    why: "\"Have I been here?\" is a Set question. Text keys like \"3,4\" match by their content, while two separate [3, 4] arrays don't. An array of positions would also have to be searched through on every step.", code: "visited.add(x + \",\" + y); visited.has(x + \",\" + y);" },
+  { q: "A live leaderboard that always shows the top 10 of a constantly changing set of scores.", o: ["Unsorted array", "Priority queue", "Set", "Stack"], a: 1,
+    why: "\"Highest first\" is a priority queue. For a few hundred players, sorting an array whenever a score changes is fine. With millions of players and constant updates, a priority queue or the database's built-in sorting avoids re-sorting everything every time.", code: "players.sort((a, b) => b.score - a.score).slice(0, 10) // fine when small" },
 ];
 const drillAns = store.get("drills", {});
 function renderDrills() {
@@ -1901,7 +1922,7 @@ function renderBools() {
   const cur = [$("#b-loading").checked, $("#b-error").checked, $("#b-data").checked];
   const [ok, name, screen] = comboInfo(cur);
   $("#b-screen").textContent = screen;
-  $("#b-verdict").replaceChildren(ok ? h("span", { class: "verdict-ok" }, "Valid state: " + name) : h("span", { class: "verdict-no" }, "Impossible state. Nothing should ever produce this, yet the types allow it."));
+  $("#b-verdict").replaceChildren(ok ? h("span", { class: "verdict-ok" }, "Valid state: " + name) : h("span", { class: "verdict-no" }, "Impossible state. No real situation looks like this, yet nothing in the code prevents it."));
   $("#combos").replaceChildren(h("thead", {}, h("tr", {}, ["isLoading", "hasError", "hasData", "meaning"].map(t => h("th", {}, t)))),
     h("tbody", {}, COMBOS.map(c => { const [cok, cname] = comboInfo(c); return h("tr", { class: c.every((v, i) => v === cur[i]) ? "cur" : "" }, c.map(v => h("td", {}, String(v))), h("td", { class: cok ? "verdict-ok" : "verdict-no" }, cok ? cname : "impossible")); })));
 }
@@ -1965,8 +1986,8 @@ $("#inter-all").addEventListener("click", () => {
     h("p", { style: "margin-top:0.9rem;" }, h("strong", {}, orders.length + " possible orders: " + good + " correct, " + (orders.length - good) + " lose a deposit.")),
     h("div", { class: "chips" }, chips),
     h("p", { class: "small", style: "margin-top:0.6rem;" }, steps.length > 1
-      ? "Only the orders where one task finishes entirely before the other reads are safe. A test that happens to run AAABBB passes, and the bug ships."
-      : "With the read-change-write made indivisible, there are only two orders, and both are correct. You didn't get better at imagining histories; you removed them."));
+      ? "Only the orders where one task finishes completely before the other starts reading are safe. A test that happens to run AAABBB (all of A, then all of B) passes, so the bug goes unnoticed until real users hit a bad order."
+      : "With read, add and write done as one step that can't be interrupted, there are only two possible orders, and both are correct. You didn't get better at imagining every order; you removed the dangerous ones."));
 });
 $("#inter-reset").addEventListener("click", interReset);
 $("#inter-atomic").addEventListener("change", interReset);
@@ -1974,14 +1995,14 @@ interReset();
 
 /* ---------- practice plan ---------- */
 const PLAN = [
-  "Week 1: Redo Chapter 1 with your own code. Draw the names-and-containers table by hand for three functions you wrote last month.",
-  "Week 1: For every snippet you run this week, write the prediction first. Count your surprises.",
-  "Week 2: Read the first part of How to Design Programs and follow the design recipe on five small functions, writing the data definition first.",
-  "Week 2: Solve five easy Exercism exercises. Before submitting, write the edge-case list from Chapter 6 and test each one.",
-  "Week 3: Next time you hit a real bug, use the logbook: symptom, list of worlds, experiments, conclusion. Keep it even if the bug turns out simple.",
-  "Week 3: Refactor one piece of your own code that uses several booleans for state into a single status field.",
-  "Week 4: Pick a project feature and run it through the Chapter 4 helper. Write the data definition before any code.",
-  "Week 4: Find one read-change-write in your code (a counter, a cart update, a form save) and ask: what if two of these ran at once?",
+  "Week 1: Redo Chapter 1 using code you wrote yourself. For three of your functions, draw the names-and-containers table on paper, line by line.",
+  "Week 1: Before running any code this week, write down what you expect it to print. Count how often you're surprised.",
+  "Week 2: Read the first part of How to Design Programs and use its design recipe on five small functions. Start each one by writing down what the input data looks like.",
+  "Week 2: Solve five easy Exercism exercises. Before submitting each one, go through the test-input list in Chapter 6 (empty, one, duplicates…) and try each case.",
+  "Week 3: Next time you hit a real bug, keep the Chapter 2 logbook: the symptom, the list of possible explanations, each check, the conclusion. Keep it even if the bug turns out to be simple.",
+  "Week 3: Find code of yours that tracks what stage something is at with several true/false variables. Rewrite it with a single status field (Chapter 6).",
+  "Week 4: Pick a feature you want to build and run it through the Chapter 4 helper. Write down the data's shape before writing any code.",
+  "Week 4: Find one read-then-change-then-write in your code (a counter, a cart update, saving a form) and ask: what if two of these ran at the same time?",
 ];
 const planDone = store.get("plan", []);
 $("#plan").append(...PLAN.map((t, n) => {
