@@ -54,7 +54,8 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+/* Type scales with the window so wide screens get larger, easier-to-read text instead of empty margins. */
+html { font-size: clamp(16px, 7px + 0.9vw, 24px); scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 body {
   margin: 0;
@@ -64,7 +65,7 @@ body {
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--ink);
-  font: 400 var(--s-md)/1.6 var(--f-body);
+  font: 400 var(--s-md)/1.65 var(--f-body);
 }
 a { color: var(--accent); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -81,14 +82,14 @@ mark { background: var(--mark); color: var(--mark-ink); padding: 0 0.2em; border
 .brand { font-family: var(--f-display); font-weight: 700; font-size: var(--s-md); letter-spacing: 0.01em; }
 .brand span { color: var(--muted); font-weight: 400; }
 @media (max-width: 640px) { .brand span { display: none; } }
-.topbar .meter { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 0.6rem; font-size: var(--s-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+.topbar .meter { flex: 1; max-width: 20rem; display: flex; align-items: center; gap: 0.6rem; font-size: var(--s-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
 .meter-track { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
 .meter-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
 
 /* shell */
-.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2rem; margin: 0; padding: 1.5rem 24px 4rem; }
+.shell { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: 2rem; margin: 0; padding: 1.5rem 24px 4rem; }
 @media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding-top: 1.25rem; padding-inline: 16px; } }
-.rail { position: sticky; top: 72px; align-self: start; }
+.rail { position: sticky; top: 4.5rem; align-self: start; }
 @media (max-width: 900px) { .rail { position: static; } }
 .rail h2 { font: 600 var(--s-xs)/1.2 var(--f-body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 0.75rem; }
 .rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
@@ -111,9 +112,9 @@ h1 { font-size: var(--s-xxl); letter-spacing: -0.01em; margin-bottom: 1rem; }
 .chapter > h2 { font-size: var(--s-xl); margin-bottom: 1rem; }
 h3 { font-size: var(--s-lg); margin: 2.25rem 0 0.75rem; }
 h4 { font-size: var(--s-md); margin: 1.25rem 0 0.4rem; }
-p, ul, ol { margin: 0 0 1rem; max-width: 90ch; }
+p, ul, ol { margin: 0 0 1rem; max-width: 100ch; }
 li { margin-bottom: 0.35rem; }
-.lede { font-size: 1.2rem; color: var(--muted); max-width: 75ch; }
+.lede { font-size: 1.3rem; color: var(--muted); max-width: 80ch; }
 .small { font-size: var(--s-sm); color: var(--muted); }
 
 /* panels */
@@ -129,6 +130,7 @@ blockquote cite { display: block; font-style: normal; font-size: var(--s-sm); ma
 .table-wrap { overflow-x: auto; margin: 1rem 0; }
 table { border-collapse: collapse; width: 100%; font-size: var(--s-sm); background: var(--sheet); }
 th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+@media (min-width: 901px) { td:first-child { white-space: nowrap; } }
 th { font-weight: 600; font-size: var(--s-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 td.num { font-variant-numeric: tabular-nums; }
 .fast { color: var(--good); font-weight: 600; }
@@ -228,7 +230,7 @@ select { font: var(--s-sm) var(--f-body); padding: 0.5rem; border-radius: var(--
 .probe .val { font: var(--s-xs) var(--f-mono); background: var(--mark); color: var(--mark-ink); padding: 0.25rem 0.5rem; border-radius: 3px; justify-self: start; }
 
 /* field guide cards */
-.guide { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.guide { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 1rem; margin: 1.25rem 0; }
 .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 .card h4 { margin: 0; font-size: var(--s-lg); }
 .card .q { font-style: italic; color: var(--muted); font-size: var(--s-sm); margin: 0; }
